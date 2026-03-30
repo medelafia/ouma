@@ -1,28 +1,28 @@
 import requests 
 import json 
-
+import time 
 
 
 """
     Copy Right 2026 (C) Mohamed EL AFIA                             
-    app name : Smart Mon                                            
+    Tool Name : Ouma  
+    Purpose : Cycle End Project                               
 """
 
 
 
 ## DEFINNING SOME GLOBAL VARIABLES 
 PROMETHEUS_URL = "http://localhost:9090/api/v1"
-metrics = [
-    {"name" :"cpu_usage" , "query" : '100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'},
+queries = [
+    {"name" :"cpu_usage" , "query" : '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'},
     { "name"  : "memory_usage" , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
-    { "name": "avalaible_memory" , "query": ""} , 
-    { "name": "disk_read" , "query": "rate(node_disk_read_bytes_total[5m])"} , 
-    { "name": "disk_write" , "query": "rate(node_disk_written_bytes_total[5m])"} , 
-    { "name": "disk_storage" , "query": ""} , 
+   # { "name": "avalaible_memory" , "query": ""} , 
+    { "name": "disk_read" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
+    { "name": "disk_write" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
     { "name":"cpu_cores" , "query" : 'count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})' } , 
 ]
 
-def execute_query(path , query ) : 
+def execute_query(path , query=None ) : 
     """
         Aim's for executing prometheus queries. 
         args : 
@@ -30,24 +30,28 @@ def execute_query(path , query ) :
         return -> query result
     """
     try : 
-    
-        response = requests.get(path,params= { "query" : query}) if query is not None else requests.get(path)
+        end = int(time.time())
+        start = end - 2 * 60 * 60 
+
+        response = requests.get(path,params= { "query" : query, "step":300, "start" : start ,"end" : end }) if query is not None else requests.get(path)
         response.raise_for_status()
 
         return response.json()
     except Exception as ex: 
         print(ex)
 
-def fetch_metrics(node_id) : 
+def fetch_metrics() : 
     """
         Metrics loader from prometheus instance, return a list of metrics
         args : 
             - nodes_id :
     """
+    global metrics
 
-    metrics = [  {"name" : metric['name'] , "value" :  execute_query(PROMETHEUS_URL + "/query" , metric['name'])} for metric in metrics] 
+    responses_metrics= [  {"name" : query['name'] , "value" :  execute_query(PROMETHEUS_URL + "/query_range" , query['query'])} for query in queries ] 
     
-    return metrics 
+
+    return responses_metrics 
 
 
 def fetch_nodes() : 

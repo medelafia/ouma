@@ -1,7 +1,17 @@
+
+
+"""
+    Copy Right 2026 (C) Mohamed EL AFIA                             
+    Tool Name : Ouma  
+    Purpose : Cycle End Project                               
+"""
+
 from fastapi import FastAPI 
-from core.prometheus_module import fetch_metrics  ,  fetch_nodes
+from core.prometheus_module import fetch_metrics  ,  fetch_nodes 
 import json 
 import datetime
+
+
 services = [] 
 
 app = FastAPI()
@@ -24,9 +34,9 @@ def get_all_services() :
         } 
         return error_response
 
-@app.get("/services/<service_name>/metrics") 
-def get_service_metrics(service_name : str) : 
-    return 
+@app.get("/services/metrics") 
+def get_service_metrics() : 
+    return fetch_metrics()
 
 @app.get("/services/<service_name>/anomalies")
 def get_service_anomalies(service_name : str) : 
