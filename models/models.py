@@ -12,6 +12,8 @@ import datetime
 class Prediction(BaseModel ) : 
     timestamp: datetime 
     anomaly_score: float 
+    cpu_usage : float
+    memory_usage : float
 
 
 class Alert(BaseModel) :
@@ -19,14 +21,15 @@ class Alert(BaseModel) :
 
 
 
-class Node(BaseModel) : 
-    pass
 
 class Microservie(BaseModel) :
     pass
 
-class Insrance(BaseModel) : 
-    pass 
+class Instance(BaseModel) : 
+    instanceId: str 
+    port : int 
+    ipAddress : str
+
 
 class PredictedMetrics(BaseModel):
     pass 

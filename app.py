@@ -7,7 +7,7 @@
 """
 
 from fastapi import FastAPI 
-from core.prometheus_module import fetch_metrics  ,  fetch_nodes 
+from core.prometheus_module import fetch_metrics  ,  fetch_instances 
 import json 
 import datetime
 
@@ -20,12 +20,12 @@ app = FastAPI()
 def get_kpis() :
     return 
 
-@app.get("/services/all") 
+@app.get("/instances/all") 
 def get_all_services() : 
     try :
-        services = fetch_nodes()
+        instances = fetch_instances()
     
-        return services
+        return instances
     except Exception as ex:
         error_response = {
             "details" :  str(ex) , 

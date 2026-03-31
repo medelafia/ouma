@@ -1,4 +1,4 @@
-from core.prometheus_module import fetch_metrics
+from core.prometheus_module import fetch_metrics , fetch_nodes
 import pandas as pd 
 
 def prepare_data_input() : 
@@ -10,8 +10,14 @@ def prepare_data_input() :
         args : None 
     """
     metrics = fetch_metrics()
+    nodes = fetch_nodes() 
+    dfs = []
 
-    df = pd.DataFrame(metrics)
+    for node in nodes : 
+        
+        df = pd.DataFrame(metrics)
+
+    
     
 
 

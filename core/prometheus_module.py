@@ -20,7 +20,10 @@ queries = [
     { "name": "disk_read" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
     { "name": "disk_write" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
     { "name":"cpu_cores" , "query" : 'count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})' } , 
+    { "name": "memory_capacity" , "query" : "node_memory_MemTotal_bytes"} , 
+    { "name" : "disk_size" , "query" : 'sum(node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} / 1024 / 1024 / 1024) by (application, instance, device)'}
 ]
+
 
 def execute_query(path , query=None ) : 
     """
@@ -54,7 +57,7 @@ def fetch_metrics() :
     return responses_metrics 
 
 
-def fetch_nodes() : 
+def fetch_instances() : 
     """ 
         This function responsible for fetching services from eureka discovery
     """
