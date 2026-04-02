@@ -1,16 +1,17 @@
-import mysql.connector 
 from utils.env_factory import get_config
+from sqlmodel import Session, SQLModel, create_engine
 
- 
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
 
-HOST , _ = get_config("MYSQL_DB_HOST").split(":")
-USERNAME = get_config("MYSQL_DB_USERNAME")
-PASSWORD = get_config("MYSQL_DB_PASSWORD")
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
 
 
-def get_mysql_connection() : 
-    return mysql.connector.connect(
-        host=HOST,
-        user=USERNAME,
-        password=PASSWORD
-        )
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session

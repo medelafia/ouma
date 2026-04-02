@@ -10,7 +10,7 @@ bucket , org = get_config("INFLUX_DB_BUCKET")  , get_config("INFLUX_DB_ORG")
 client = get_influx_connection() 
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
-def save_prediction(node_id , prediction : Prediction ) : 
+def save_prediction(node_id , prediction : MetricsPrediction ) : 
     p = influxdb_client.Point("predictions") \
         .tag("type" , "prediction") \
         .tag("node_id", node_id) \

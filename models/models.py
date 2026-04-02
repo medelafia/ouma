@@ -1,57 +1,33 @@
-from pydantic import BaseModel  , EmailStr , Field
-from typing import Optional 
-import datetime 
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+from datetime import time , date , datetime 
+
+class Instance(SQLModel, table=True):
+    instance_id : str | None = Field(default=None, primary_key=True)
+    ip_address : str = Field(index=True)
+    port : int | None = Field(default=None, index=True)
+
+
+class Alert(SQLModel , table=True) : 
+    alert_id : str | None = Field(default=None , primary_key = True )
+    send_time : time = Field(default=datetime.now().time() )
+    send_date: date = Field(default=datetime.now().date() ) 
+    status : str = Field(default="UNSEEN") 
+    content : str | None = Field(default=None ) 
 
 
 
 
-"""
-    Prediction Engine related schemas 
-"""
-
-class Prediction(BaseModel ) : 
-    timestamp: datetime 
-    anomaly_score: float 
-    cpu_usage : float
-    memory_usage : float
-
-
-class Alert(BaseModel) :
-    pass 
+class Anomaly(SQLModel , table=True) : 
+    anomaly_id : str | None = Field(default=None ,primary_key= True ) 
+    detection_time : time = Field(default=datetime.now().time() )
+    detection_date: date = Field(default=datetime.now().date() ) 
+    duration : int = Field(default=0 , description="How many seconds anomaly detected")
 
 
 
-
-class Microservie(BaseModel) :
-    pass
-
-class Instance(BaseModel) : 
-    instanceId: str 
-    port : int 
-    ipAddress : str
-
-
-class PredictedMetrics(BaseModel):
-    pass 
-
-class Amomaly(BaseModel) :
-    pass 
-
-class Incident(BaseModel) :
-    pass
-
-
-
-
-
-"""
-
-    Auth related schemas
-
-"""
-
-class User(BaseModel) : 
-    username : str = Field(None ,description="Usernae is required") 
-    password : str = Field(None , description="Password is required , please entert a valid password")
-    email: EmailStr
+class Incident(SQLModel , table=True ) : 
+    incident_id : str | None = Field(default=None)
+    incident_time : time = Field(default=datetime.now().time() )
+    incident_date : date = Field(default=datetime.now().date() ) 
+    description : str | None = Field(default=None)
 

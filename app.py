@@ -1,5 +1,3 @@
-
-
 """
     Copy Right 2026 (C) Mohamed EL AFIA                             
     Tool Name : Ouma  
@@ -12,7 +10,9 @@ import json
 import datetime
 
 
-services = [] 
+
+
+
 
 app = FastAPI()
 
