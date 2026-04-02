@@ -10,5 +10,6 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 
-def savePrediction() : 
+def saveAlert() : 
     pass
+

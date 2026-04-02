@@ -14,9 +14,6 @@ class Alert(SQLModel , table=True) :
     status : str = Field(default="UNSEEN") 
     content : str | None = Field(default=None ) 
 
-
-
-
 class Anomaly(SQLModel , table=True) : 
     anomaly_id : str | None = Field(default=None ,primary_key= True ) 
     detection_time : time = Field(default=datetime.now().time() )
