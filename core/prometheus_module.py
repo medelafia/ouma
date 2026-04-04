@@ -9,7 +9,6 @@ PROMETHEUS_URL = "http://localhost:9090/api/v1"
 queries = [
     {"name" :"cpu_usage" , "query" : '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'},
     { "name"  : "memory_usage" , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
-   # { "name": "avalaible_memory" , "query": ""} , 
     { "name": "disk_read" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
     { "name": "disk_write" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
     { "name":"cpu_cores" , "query" : 'count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})' } , 
@@ -27,7 +26,7 @@ def execute_query(path , query=None ) :
     """
     try : 
         end = int(time.time())
-        start = end - 2 * 60 * 60 
+        start = end - 1.4 * 60 * 60 
 
         response = requests.get(path,params= { "query" : query, "step":300, "start" : start ,"end" : end }) if query is not None else requests.get(path)
         response.raise_for_status()
