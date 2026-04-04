@@ -1,9 +1,6 @@
 from core.prometheus_module import fetch_metrics , fetch_instances
 import pandas as pd 
 
-
-
-
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
         if record['timestamp'] == timestamp :
@@ -18,24 +15,14 @@ def prepare_data_input() :
         func_name : prepare_data_input
         description : Load data from prometheus , create record for making ML model prediction ,
         scale data using the scaler used in the training process , create new features such as lag1 , cpu_std ...  
-        return : ready data to predict next values
         args : None 
-
-        {
-            'instance 1' : [
-                {   
-                    timestamp : 1000000 , 
-                    cpu_usage : 10 , 
-                    ...
-                }
-            ] 
-            
-            
-        }
+        return : a list of dataframes ready to be an input of model to predict next values
     """
     metrics = fetch_metrics()
     data = { }
     
+
+    ## loop through the metrics and append each metric to predefined dictionnary 
     for metric in metrics : 
         if metric['value']['status'] == 'success' : 
             for i in range(len(metric['value']['data']['result'])) :
@@ -43,7 +30,7 @@ def prepare_data_input() :
                 if metrics_result['metric']['instance'] not in data :
                     data[metrics_result['metric']['instance']] = []
                 
-                 
+                
                 for value in metrics_result['values']  : 
                     metric_name = metric['name'] 
                     timestamp = value[0]
@@ -57,8 +44,11 @@ def prepare_data_input() :
                                 data[metrics_result['metric']['instance']][j][metric_name] = metric_value
     
 
-
-
+    """
+    here i tried to create dataframes based on dict created after the previous part ,
+    and in the same time i tried to preprocess the data following the same stepss in
+    the model training process, and adding some additionnal features such as cpu_lag5...
+    """
     dataframes = [ pd.DataFrame(data[elem]) for elem in data]
     for i in range(len(dataframes)): 
         print(dataframes[i].head())
@@ -69,20 +59,14 @@ def prepare_data_input() :
         dataframes[i]['day'] = dataframes[i].index.day.astype(int)
         dataframes[i]['weekday'] = dataframes[i].index.weekday.astype(int)
 
-        dataframes[i]['cpu_lag1'] = dataframes[i]['CPU usage [%]'].shift(1)
-        dataframes[i]['cpu_lag5'] = dataframes[i]['CPU usage [%]'].shift(5)
+        dataframes[i]['cpu_lag1'] = dataframes[i]['cpu_usage'].shift(1)
+        dataframes[i]['cpu_lag5'] = dataframes[i]['cpu_usage'].shift(5)
 
-        dataframes[i]['cpu_mean'] = dataframes[i]['CPU usage [%]'].rolling(5).mean()
-        dataframes[i]['cpu_std'] = dataframes[i]['CPU usage [%]'].rolling(5).std()
+        dataframes[i]['cpu_mean'] = dataframes[i]['cpu_usage'].rolling(5).mean()
+        dataframes[i]['cpu_std'] = dataframes[i]['cpu_usage'].rolling(5).std()
+        
+        
+        dataframes[i] = dataframes[5:]
 
-        print(dataframes[i].head())
-    
 
     return data
-     
-
-
-
-
-
-

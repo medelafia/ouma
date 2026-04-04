@@ -26,7 +26,7 @@ def execute_query(path , query=None ) :
     """
     try : 
         end = int(time.time())
-        start = end - 1.4 * 60 * 60 
+        start = end - 1.75 * 60 * 60 
 
         response = requests.get(path,params= { "query" : query, "step":300, "start" : start ,"end" : end }) if query is not None else requests.get(path)
         response.raise_for_status()
