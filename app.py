@@ -1,8 +1,7 @@
-"""
-    Copy Right 2026 (C) Mohamed EL AFIA                             
-    Tool Name : Ouma  
-    Purpose : Cycle End Project                               
-"""
+###############################################################################
+####    Copy Right 2026 (C) Mohamed EL AFIA                             
+####    App Name : Ouma                               
+###############################################################################
 
 from fastapi import FastAPI 
 from routers.instances_router import instances_routers

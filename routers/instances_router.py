@@ -1,9 +1,7 @@
 from fastapi import APIRouter 
 from core.prometheus_module import fetch_metrics  ,  fetch_instances 
 import datetime 
-
-
-
+from services.ressource_prediction_services import prepare_data_input
 
 instances_routers = APIRouter(prefix="/api/v1/instances")
 
@@ -21,7 +19,18 @@ def get_all_services() :
         } 
         return error_response
 
-@instances_routers.get("/instances/metrics") 
-def get_service_metrics() : 
+@instances_routers.get("/metrics") 
+def get_services_metrics() : 
     return fetch_metrics()
+
+@instances_routers.get("/metrics/prepared") 
+def get_services_metrics() : 
+    return prepare_data_input()
+
+
+
+@instances_routers.get("/<instance_id>/metrics")
+def get_service_metrics(): 
+    
+    return 
 

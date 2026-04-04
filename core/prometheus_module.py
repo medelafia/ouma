@@ -3,13 +3,6 @@ import json
 import time 
 
 
-"""
-    Copy Right 2026 (C) Mohamed EL AFIA                             
-    Tool Name : Ouma  
-    Purpose : Cycle End Project                               
-"""
-
-
 
 ## DEFINNING SOME GLOBAL VARIABLES 
 PROMETHEUS_URL = "http://localhost:9090/api/v1"
@@ -46,15 +39,27 @@ def execute_query(path , query=None ) :
 def fetch_metrics() : 
     """
         Metrics loader from prometheus instance, return a list of metrics
-        args : 
-            - nodes_id :
     """
-    global metrics
 
     responses_metrics= [  {"name" : query['name'] , "value" :  execute_query(PROMETHEUS_URL + "/query_range" , query['query'])} for query in queries ] 
     
 
     return responses_metrics 
+
+
+
+def fetch_instance_metrics(instance_host) : 
+    responses_metrics = fetch_metrics() 
+
+    
+    for metric in responses_metrics : 
+        if metric['value']['status'] :
+            for i , result in enumerate(metric['value']['data']['result']) : 
+                if result['metric']['instance'] != instance_host : 
+                    metric['value']['data']['result'].pop(i)
+    
+
+    return responses_metrics
 
 
 def fetch_instances() : 
@@ -71,6 +76,8 @@ def check_service_health(service_name) :
     """
     response = requests.get(PROMETHEUS_URL)
     return response
+
+
 
 
 
