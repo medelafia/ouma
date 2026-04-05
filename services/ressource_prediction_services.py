@@ -2,7 +2,9 @@ from core.prometheus_module import fetch_metrics , fetch_instances
 import pandas as pd 
 from tensorflow.keras.models import load_model
 import pickle 
-
+from services.influx_service import save_prediction 
+from schemas.schemas import MetricsPrediction
+from datetime import timedelta
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
@@ -75,9 +77,7 @@ def prepare_data_input() :
 
         i += 1 
 
-    return dataframes
-
-
+    return dataframes , values 
 
 
 def load_min_max_scaler(type) :
@@ -89,14 +89,17 @@ def load_lstm_model() :
     return model
 
 def predict_next_and_save() : 
-    input_values_sequence_dict = prepare_data_input()
+    dfs , input_values_sequence_dict = prepare_data_input()
     model = load_lstm_model() 
     output_scaler = load_min_max_scaler(type="output")
     results = {}
     for key in input_values_sequence_dict :
         predictions = model.predict(input_values_sequence_dict[key])
-        results[key] = output_scaler.inverse_transform(predictions) 
+        predictions = output_scaler.inverse_transform(predictions) 
+        predicted_datetime = dfs[key].iloc[-1].index + timedelta(minutes=5)
+        save_prediction(key, MetricsPrediction(predicted_datetime , key , predictions[0][0] , predictions[0][0]) ) 
 
+        results[key] = predictions
     return results
 
     
