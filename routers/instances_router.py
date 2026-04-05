@@ -1,5 +1,5 @@
 from fastapi import APIRouter 
-from core.prometheus_module import fetch_metrics  ,  fetch_instances 
+from services.prometheus_service import fetch_metrics  ,  fetch_instances 
 import datetime 
 from services.ressource_prediction_services import prepare_data_input
 

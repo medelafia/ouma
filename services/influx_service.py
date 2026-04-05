@@ -25,7 +25,7 @@ def save_prediction(instance_id , prediction : MetricsPrediction ) :
 def save_actual_records(instance_id , cpu_usage , memory_usage , timestamp) : 
     p = influxdb_client.Point("real_measurement") \
         .tag("type" , "actual") \
-        .tag("node_id", instance_id) \
+        .tag("instance_id", instance_id) \
         .field("cpu_usage", cpu_usage ) \
         .field("memory_usage" , memory_usage ) \
         .time(timestamp) 
@@ -35,14 +35,18 @@ def save_actual_records(instance_id , cpu_usage , memory_usage , timestamp) :
 
 
 
-def load_actual_values(node_id , start_time , end_time) : 
-    query = f"from(bucket : {bucket})\
+def load_metrics(instance_id , start_time , end_time , measurment ) : 
+    query = f'from(bucket : {bucket})\
             range(start : ) \
-            filter(fn: (r) => r.tag == "")\
-             \
-            "
+            filtet(fn: (r) => r._measurment == {measurment}) \
+            filter(fn: (r) => r.instance == {instance_id}) '
+    
+    result = query_api.query(org=org , query=query)
+    results = []
+    for table in result : 
+        for record in table.records : 
+            results.append((record.get_field() , record.get_value()))
 
+    print(results) 
+    return result 
 
-
-def load_predictions(node_id , start_time , end_time) : 
-    pass 

@@ -1,4 +1,4 @@
-from core.prometheus_module import fetch_metrics , fetch_instances
+from services.prometheus_service import fetch_metrics , fetch_instances
 import pandas as pd 
 from tensorflow.keras.models import load_model
 import pickle 
@@ -24,7 +24,6 @@ def prepare_data_input() :
     metrics = fetch_metrics()
     data = { }
     
-
     ## loop through the metrics and append each metric to predefined dictionnary 
     for metric in metrics : 
         if metric['value']['status'] == 'success' : 
