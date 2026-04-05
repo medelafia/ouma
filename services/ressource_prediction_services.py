@@ -1,12 +1,13 @@
 from core.prometheus_module import fetch_metrics , fetch_instances
 import pandas as pd 
+from tensorflow.keras.models import load_model
+import pickle 
+
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
         if record['timestamp'] == timestamp :
             return True 
-    
-
     return False 
 
 
@@ -49,24 +50,53 @@ def prepare_data_input() :
     and in the same time i tried to preprocess the data following the same stepss in
     the model training process, and adding some additionnal features such as cpu_lag5...
     """
-    dataframes = [ pd.DataFrame(data[elem]) for elem in data]
-    for i in range(len(dataframes)): 
+    scaler = load_min_max_scaler('input')
+    dataframes = { key : pd.DataFrame(data[key]) for key in data }
+    values = []
+    i = 0 
+    for key in dataframes: 
         print(dataframes[i].head())
-        dataframes[i]['timestamp'] = pd.to_datetime(dataframes[i]['timestamp'] , unit='s')
-        dataframes[i].set_index('timestamp', inplace=True)
-        dataframes[i].sort_index(inplace=True)
-        dataframes[i]['hour'] = dataframes[i].index.hour.astype(int)
-        dataframes[i]['day'] = dataframes[i].index.day.astype(int)
-        dataframes[i]['weekday'] = dataframes[i].index.weekday.astype(int)
+        dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
+        dataframes[key].set_index('timestamp', inplace=True)
+        dataframes[key].sort_index(inplace=True)
+        dataframes[key]['hour'] = dataframes[key].index.hour.astype(int)
+        dataframes[key]['day'] = dataframes[key].index.day.astype(int)
+        dataframes[key]['weekday'] = dataframes[key].index.weekday.astype(int)
 
-        dataframes[i]['cpu_lag1'] = dataframes[i]['cpu_usage'].shift(1)
-        dataframes[i]['cpu_lag5'] = dataframes[i]['cpu_usage'].shift(5)
+        dataframes[key]['cpu_lag1'] = dataframes[key]['cpu_usage'].shift(1)
+        dataframes[key]['cpu_lag5'] = dataframes[key]['cpu_usage'].shift(5)
 
-        dataframes[i]['cpu_mean'] = dataframes[i]['cpu_usage'].rolling(5).mean()
-        dataframes[i]['cpu_std'] = dataframes[i]['cpu_usage'].rolling(5).std()
-        
-        
-        dataframes[i] = dataframes[5:]
+        dataframes[key]['cpu_mean'] = dataframes[key]['cpu_usage'].rolling(5).mean()
+        dataframes[key]['cpu_std'] = dataframes[key]['cpu_usage'].rolling(5).std()
+        ### deleteing the first 5 data records , because they will contain noisy rows 
+        dataframes[key] = dataframes[5:]
+
+        values[i] = scaler.transform(dataframes[key])
+
+        i += 1 
+
+    return dataframes
 
 
-    return data
+
+
+def load_min_max_scaler(type) :
+    return pickle.load(open(f"scaler_lstm_ressource_prediction_{'data' if type == "input" else "labels"}.pkl" , 'rb')) 
+
+def load_lstm_model() :
+    model = load_model("other/model.h5")
+
+    return model
+
+def predict_next_and_save() : 
+    input_values_sequence_dict = prepare_data_input()
+    model = load_lstm_model() 
+    output_scaler = load_min_max_scaler(type="output")
+    results = {}
+    for key in input_values_sequence_dict :
+        predictions = model.predict(input_values_sequence_dict[key])
+        results[key] = output_scaler.inverse_transform(predictions) 
+
+    return results
+
+    
