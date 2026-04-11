@@ -58,7 +58,6 @@ def prepare_data_input() :
     values = []
     i = 0 
     for key in dataframes: 
-        print(dataframes[key].head())
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)
         dataframes[key].sort_index(inplace=True)
@@ -84,12 +83,12 @@ def prepare_data_input() :
         dataframes[key] = dataframes[key].fillna(method='bfill')
         dataframes[key] = dataframes[key].dropna()
 
-        print(dataframes[key].head(24))
-        print(dataframes[key].describe())
+        dataframes[key] = dataframes[key].tail(24)
+
         #values[i] = scaler.transform(dataframes[key])
         values.append(dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values)
+        print(values[i])
         values[i] = scaler.transform(values[i])
-        print(values[i].shape)
         i += 1 
 
     return dataframes , values 
@@ -108,13 +107,18 @@ def predict_next_and_save() :
     model = load_lstm_model() 
     output_scaler = load_min_max_scaler(type="output")
     results = {}
-    for key in input_values_sequence_dict :
+    for key in range(len(input_values_sequence_dict)) :
+        print(input_values_sequence_dict[key])
         predictions = model.predict(input_values_sequence_dict[key])
         predictions = output_scaler.inverse_transform(predictions) 
+        print(predictions)
         predicted_datetime = dfs[key].iloc[-1].index + timedelta(minutes=5)
         save_prediction(key, MetricsPrediction(predicted_datetime , key , predictions[0][0] , predictions[0][0]) ) 
 
         results[key] = predictions
     return results
 
-    
+
+
+def is_prediction_service_ready() :
+    return len(fetch_metrics()[0]['value']['data']['result'][0]['values']) > 29
