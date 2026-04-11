@@ -5,6 +5,8 @@ import pickle
 from services.influx_service import save_prediction 
 from schemas.schemas import MetricsPrediction
 from datetime import timedelta
+import sklearn
+import numpy as np
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
@@ -56,35 +58,48 @@ def prepare_data_input() :
     values = []
     i = 0 
     for key in dataframes: 
-        print(dataframes[i].head())
+        print(dataframes[key].head())
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)
         dataframes[key].sort_index(inplace=True)
         
+        for col in dataframes[key].columns : 
+            dataframes[key][col] = pd.to_numeric(dataframes[key][col] , errors='coerce')
+ 
+        dataframes[key]['CPU capacity provisioned [MHZ]']= 2400 * dataframes[key]['CPU cores']
+
         dataframes[key]['hour'] = dataframes[key].index.hour.astype(int)
         dataframes[key]['day'] = dataframes[key].index.day.astype(int)
         dataframes[key]['weekday'] = dataframes[key].index.weekday.astype(int)
 
-        dataframes[key]['cpu_lag1'] = dataframes[key]['cpu_usage'].shift(1)
-        dataframes[key]['cpu_lag5'] = dataframes[key]['cpu_usage'].shift(5)
+        dataframes[key]['cpu_lag1'] = dataframes[key]['CPU usage [%]'].shift(1)
+        dataframes[key]['cpu_lag5'] = dataframes[key]['CPU usage [%]'].shift(5)
 
-        dataframes[key]['cpu_mean'] = dataframes[key]['cpu_usage'].rolling(5).mean()
-        dataframes[key]['cpu_std'] = dataframes[key]['cpu_usage'].rolling(5).std()
+        dataframes[key]['cpu_mean'] = dataframes[key]['CPU usage [%]'].rolling(5).mean()
+        dataframes[key]['cpu_std'] = dataframes[key]['CPU usage [%]'].rolling(5).std()
         ### deleteing the first 5 data records , because they will contain noisy rows 
-        dataframes[key] = dataframes[5:]
 
-        values[i] = scaler.transform(dataframes[key])
+        
+        dataframes[key] = dataframes[key].replace([np.inf, -np.inf], np.nan)
+        dataframes[key] = dataframes[key].fillna(method='bfill')
+        dataframes[key] = dataframes[key].dropna()
 
+        print(dataframes[key].head(24))
+        print(dataframes[key].describe())
+        #values[i] = scaler.transform(dataframes[key])
+        values.append(dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values)
+        values[i] = scaler.transform(values[i])
+        print(values[i].shape)
         i += 1 
 
     return dataframes , values 
 
 
 def load_min_max_scaler(type) :
-    return pickle.load(open(f"scaler_lstm_ressource_prediction_{'data' if type == 'input' else 'labels'}.pkl" , 'rb')) 
+    return pickle.load(open(f"others/scaler_lstm_ressource_prediction_{'data' if type == 'input' else 'labels'}.pkl" , 'rb')) 
 
 def load_lstm_model() :
-    model = tf.keras.models.load_model("other/model.h5")
+    model = tf.keras.models.load_model("others/model.h5")
 
     return model
 

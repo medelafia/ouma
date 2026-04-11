@@ -25,6 +25,7 @@ def get_all_services() :
 
 @instances_routers.get("/metrics") 
 def get_services_metrics() : 
+    prepare_data_input()
     return fetch_metrics()
 
 @instances_routers.get("/{instance_id}/metrics")

@@ -7,13 +7,14 @@ import time
 ## DEFINNING SOME GLOBAL VARIABLES 
 PROMETHEUS_URL = "http://localhost:9090/api/v1"
 queries = [
-    {"name" :"cpu_usage" , "query" : '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'},
-    { "name"  : "memory_usage" , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
-    { "name": "disk_read" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
-    { "name": "disk_write" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
-    { "name":"cpu_cores" , "query" : 'count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})' } , 
-    { "name": "memory_capacity" , "query" : "node_memory_MemTotal_bytes"} , 
-    { "name" : "disk_size" , "query" : 'sum(node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} / 1024 / 1024 / 1024) by (application, instance, device)'}
+    { "name":"CPU cores" , "query" : 'count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})' } , 
+    {"name" :"CPU usage [%]" , "query" : '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'},
+    { "name": "Memory capacity provisioned [KB]" , "query" : "node_memory_MemTotal_bytes"} , 
+    { "name"  : "Memory usage [%]" , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
+    { "name": "Disk read throughput [KB/s]" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
+    { "name": "Disk write throughput [KB/s]" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
+    { "name" : "Disk size [GB]" , "query" : 'sum(node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} / 1024 / 1024 / 1024) by (application, instance, device)'} , 
+    { "name" : "Network received throughput [KB/s]" , "query" : 'rate(node_network_receive_bytes_total{device="eth0"}[5m]) / 1024'}
 ]
 
 
@@ -29,6 +30,7 @@ def execute_query(path , query=None ) :
         start = end - 1.75 * 60 * 60 
 
         response = requests.get(path,params= { "query" : query, "step":300, "start" : start ,"end" : end }) if query is not None else requests.get(path)
+
         response.raise_for_status()
 
         return response.json()
