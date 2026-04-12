@@ -1,8 +1,5 @@
 import requests 
-import json 
 import time 
-
-
 
 ## DEFINNING SOME GLOBAL VARIABLES 
 PROMETHEUS_URL = "http://localhost:9090/api/v1"
@@ -16,7 +13,6 @@ queries = [
     { "name" : "Disk size [GB]" , "query" : 'sum(node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} / 1024 / 1024 / 1024) by (application, instance, device)'} , 
     { "name" : "Network received throughput [KB/s]" , "query" : 'rate(node_network_receive_bytes_total{device="eth0"}[5m]) / 1024'}
 ]
-
 
 def execute_query(path , query=None ) : 
     """
@@ -47,11 +43,9 @@ def fetch_metrics() :
 
     return responses_metrics 
 
-
-
 def fetch_instance_metrics(instance_host) : 
-    responses_metrics = fetch_metrics() 
 
+    responses_metrics = fetch_metrics() 
     
     for metric in responses_metrics : 
         if metric['value']['status'] :
@@ -59,9 +53,7 @@ def fetch_instance_metrics(instance_host) :
                 if result['metric']['instance'] != instance_host : 
                     metric['value']['data']['result'].pop(i)
     
-
     return responses_metrics
-
 
 def fetch_instances() : 
     """ 
@@ -77,8 +69,3 @@ def check_service_health(service_name) :
     """
     response = requests.get(PROMETHEUS_URL)
     return response
-
-
-
-
-

@@ -7,6 +7,7 @@ from schemas.schemas import MetricsPrediction
 from datetime import timedelta
 import sklearn
 import numpy as np
+from utils.instance_factory import get_instance_by_host_and_port
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
@@ -15,7 +16,7 @@ def check_timestamp_existance(list_obj , timestamp  ) :
     return False 
 
 
-def prepare_data_input() : 
+def prepare_data_input(metrics) : 
     """
         func_name : prepare_data_input
         description : Load data from prometheus , create record for making ML model prediction ,
@@ -23,7 +24,6 @@ def prepare_data_input() :
         args : None 
         return : a list of dataframes ready to be an input of model to predict next values
     """
-    metrics = fetch_metrics()
     data = { }
     
     ## loop through the metrics and append each metric to predefined dictionnary 
@@ -31,21 +31,22 @@ def prepare_data_input() :
         if metric['value']['status'] == 'success' : 
             for i in range(len(metric['value']['data']['result'])) :
                 metrics_result = metric['value']['data']['result'][i]
-                if metrics_result['metric']['instance'] not in data :
-                    data[metrics_result['metric']['instance']] = []
+                instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , metrics_result['metric']['instance'].split(':')[1])
+                if instance_id not in data :
+                    data[instance_id] = []
                 
                 
                 for value in metrics_result['values']  : 
                     metric_name = metric['name'] 
                     timestamp = value[0]
                     metric_value = value[1]
-                    if not check_timestamp_existance(data[metrics_result['metric']['instance']] , timestamp) : 
-                        data[metrics_result['metric']['instance']].append({'timestamp' : timestamp , metric_name : metric_value})
+                    if not check_timestamp_existance(data[instance_id] , timestamp) : 
+                        data[instance_id].append({'timestamp' : timestamp , metric_name : metric_value})
                     else :
 
-                        for j in range(len(data[metrics_result['metric']['instance']])) :
-                            if timestamp == data[metrics_result['metric']['instance']][j]['timestamp'] :  
-                                data[metrics_result['metric']['instance']][j][metric_name] = metric_value
+                        for j in range(len(data[instance_id])) :
+                            if timestamp == data[instance_id][j]['timestamp'] :  
+                                data[instance_id][j][metric_name] = metric_value
     
 
     """
@@ -55,8 +56,7 @@ def prepare_data_input() :
     """
     scaler = load_min_max_scaler('input')
     dataframes = { key : pd.DataFrame(data[key]) for key in data }
-    values = []
-    i = 0 
+    values = {}
     for key in dataframes: 
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)
@@ -86,10 +86,8 @@ def prepare_data_input() :
         dataframes[key] = dataframes[key].tail(24)
 
         #values[i] = scaler.transform(dataframes[key])
-        values.append(dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values)
-        print(values[i])
-        values[i] = scaler.transform(values[i])
-        i += 1 
+        values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values 
+        values[key] = scaler.transform(values[i])
 
     return dataframes , values 
 
@@ -107,8 +105,9 @@ def predict_next_and_save() :
     model = load_lstm_model() 
     output_scaler = load_min_max_scaler(type="output")
     results = {}
-    for key in range(len(input_values_sequence_dict)) :
+    for key in input_values_sequence_dict :
         print(input_values_sequence_dict[key])
+        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1 , 24 , 16) 
         predictions = model.predict(input_values_sequence_dict[key])
         predictions = output_scaler.inverse_transform(predictions) 
         print(predictions)
@@ -117,8 +116,6 @@ def predict_next_and_save() :
 
         results[key] = predictions
     return results
-
-
 
 def is_prediction_service_ready() :
     return len(fetch_metrics()[0]['value']['data']['result'][0]['values']) > 29

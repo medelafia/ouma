@@ -12,11 +12,6 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 query_api = client.query_api()
 bucket_api = client.buckets_api()
 
-
-
-
-
-
 def check_bucket_and_create(bucket_name ) : 
     bucket = bucket_api.find_bucket_by_name(bucket_name)
 
@@ -29,9 +24,6 @@ def check_bucket_and_create(bucket_name ) :
         print(f"Bucket created {created_bucket}")
         return created_bucket 
     
-
-
-
 def save_prediction(instance_id , prediction : MetricsPrediction ) : 
     check_bucket_and_create(bucket)
     p = influxdb_client.Point("predicted_measurement") \
@@ -54,8 +46,6 @@ def save_actual_records(instance_id , cpu_usage , memory_usage , timestamp) :
         .time(timestamp) 
     write_api.write(bucket=bucket, org=org, record=p)
     return p
-
-
 
 def load_metrics(instance_id , start_time , measurment ) : 
     check_bucket_and_create(bucket)
@@ -84,6 +74,3 @@ def load_metrics(instance_id , start_time , measurment ) :
 
 
     return results
-
-
-
