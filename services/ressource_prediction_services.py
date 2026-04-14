@@ -8,12 +8,37 @@ from datetime import timedelta
 import sklearn
 import numpy as np
 from utils.instance_factory import get_instance_by_host_and_port
+from services.alerting_services import send_alert
+from services.anomaly_service import create_and_save_anomaly
+
+anomalies = { 
+    "memory" :  {
+        "count" : 0 ,  
+        "anomaly" : None 
+    },
+    "cpu" : {
+        "count" : 0 ,  
+        "anomaly" : None 
+    }
+}
+thresholds = {
+    "cpu" : None , 
+    "memory" : None
+}
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
         if record['timestamp'] == timestamp :
             return True 
     return False 
+
+
+def get_threshold(df , key) : 
+    global thresholds
+    if thresholds[key] is None :
+        col = "CPU usage [%]" if key == 'cpu' else "Memory usage [%]" 
+        thresholds[key] = df[col].mean() + 2 * df[col].std()
+    return thresholds[key]
 
 
 def prepare_data_input(metrics) : 
@@ -112,7 +137,41 @@ def predict_next_and_save() :
         predictions = output_scaler.inverse_transform(predictions) 
         print(predictions)
         predicted_datetime = dfs[key].iloc[-1].index + timedelta(minutes=5)
-        save_prediction(key, MetricsPrediction(predicted_datetime , key , predictions[0][0] , predictions[0][0]) ) 
+        predicted_memory = predictions[0][1]
+        predicted_cpu = predictions[0][0]
+        
+        save_prediction(key, MetricsPrediction(predicted_datetime , key , predicted_cpu ,predicted_memory) ) 
+        threshold_cpu = get_threshold(dfs[key] , 'cpu')
+        threshold_memory = get_threshold(dfs[key] , 'memory')
+
+        if predicted_cpu > threshold_cpu : 
+            if anomalies['cpu']['count'] == 0 : 
+                anomaly = create_and_save_anomaly(key)
+                anomalies['cpu']['anomaly'] = anomaly
+                send_alert("High cpu usage after 5 min" ,"LOW" , anomaly.anomaly_id)
+            elif anomalies['cpu']['count'] <= 2 : 
+                send_alert(f"CPU still high (x{anomalies['cpu']['count']})" ,"MEDIUM" ,anomalies['cpu']['anomaly'].anomaly_id)
+            else :
+                send_alert(f"CRITICAL: CPU high repeatedly (x{anomalies['cpu']['count']})" ,"HIGH" , anomalies['cpu']['anomaly'].anomaly_id)
+            anomalies['cpu']['count'] += 1  
+        else : 
+            anomalies['cpu']['count'] = 0 
+            anomalies['cpu']['anomaly'] = None
+        
+        if predicted_memory > threshold_memory : 
+
+            if anomalies['memory']['count'] == 0 : 
+                anomaly = create_and_save_anomaly(key)
+                anomalies['memory']['anomaly'] = anomaly
+                send_alert("High memory usage after 5 min" ,"LOW" , anomaly.anomaly_id)
+            elif anomalies['memory']['count'] <= 2 : 
+                send_alert(f"MEMORY still high (x{anomalies['memory']['count']})" ,"MEDIUM", anomalies['memory']['anomaly'].anomaly_id)
+            else :
+                send_alert(f"CRITICAL: MEMORY high repeatedly (x{anomalies['memory']['count']})" ,"HIGH" , anomalies['memory']['anomaly'].anomaly_id)
+            anomalies['memory']['count'] += 1  
+        else : 
+            anomalies['memory']['count'] = 0 
+            anomalies['memory']['anomaly'] = None
 
         results[key] = predictions
     return results

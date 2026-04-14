@@ -12,7 +12,7 @@ class Alert(SQLModel , table=True) :
     send_date: date = Field(default=datetime.now().date() ) 
     status : str = Field(default="UNSEEN") 
     content : str | None = Field(default=None ) 
-
+    severity : str | None = Field(None)
     anomaly_id : str | None = Field(default=None , foreign_key="anomaly.anomaly_id")
 
 class Anomaly(SQLModel , table=True) : 

@@ -7,4 +7,4 @@ alerts_router = APIRouter(prefix="/api/v1/alerts")
 
 @alerts_router.get("/all") 
 def get_all_alerts() : 
-    pass
+    return get_alerts(10)

@@ -9,7 +9,8 @@ from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
 from services.ressource_prediction_services import predict_next_and_save , is_prediction_service_ready 
 from services.prometheus_service import fetch_metrics 
-
+from routers.alert_router import alerts_router
+from routers.anomaly_router import anomaly_router
 sched =  BackgroundScheduler()
 app = FastAPI()
 
@@ -31,5 +32,6 @@ except :
     sched.shutdown()
 app.include_router(incident_router)
 app.include_router(instances_routers)
-
+app.include_router(anomaly_router)
+app.include_router(alerts_router)
 
