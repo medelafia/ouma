@@ -22,8 +22,6 @@ anomalies = {
     }
 }
 thresholds = {
-    "cpu" : None , 
-    "memory" : None
 }
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
@@ -33,12 +31,15 @@ def check_timestamp_existance(list_obj , timestamp  ) :
     return False 
 
 
-def get_threshold(df , key) : 
+def get_threshold(df , key , metric) : 
     global thresholds
-    if thresholds[key] is None :
-        col = "CPU usage [%]" if key == 'cpu' else "Memory usage [%]" 
-        thresholds[key] = df[col].mean() + 2 * df[col].std()
-    return thresholds[key]
+    if thresholds[key] is None : 
+        thresholds[key] = { "cpu" : None , "memory" : None }
+    if thresholds[key][metric] is None :
+        col = "CPU usage [%]" if metric == 'cpu' else "Memory usage [%]" 
+        thresholds[key][metric] = df[col].mean() + 2 * df[col].std()
+    
+    return thresholds[key][metric]
 
 
 def prepare_data_input(metrics) : 
@@ -125,8 +126,8 @@ def load_lstm_model() :
 
     return model
 
-def predict_next_and_save() : 
-    dfs , input_values_sequence_dict = prepare_data_input()
+def predict_next_and_save(metrics) : 
+    dfs , input_values_sequence_dict = prepare_data_input(metrics)
     model = load_lstm_model() 
     output_scaler = load_min_max_scaler(type="output")
     results = {}
@@ -141,8 +142,8 @@ def predict_next_and_save() :
         predicted_cpu = predictions[0][0]
         
         save_prediction(key, MetricsPrediction(predicted_datetime , key , predicted_cpu ,predicted_memory) ) 
-        threshold_cpu = get_threshold(dfs[key] , 'cpu')
-        threshold_memory = get_threshold(dfs[key] , 'memory')
+        threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
+        threshold_memory = get_threshold(dfs[key] , key , 'memory')
 
         if predicted_cpu > threshold_cpu : 
             if anomalies['cpu']['count'] == 0 : 

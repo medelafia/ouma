@@ -1,5 +1,5 @@
 from models.models import Anomaly
-from sqlmodel import Session
+from sqlmodel import Session , select
 from db.mysql_db_connection import get_engine 
 from uuid import uuid4
 from datetime import datetime 
@@ -15,3 +15,13 @@ def create_and_save_anomaly(instance) :
         session.commit()
     
     return anomaly
+
+
+
+def get_all_anomalies(limit) : 
+    with Session(get_engine() ) as session : 
+        return session.exec(select(Anomaly).offset(0).limit(limit)).all() 
+
+def get_anomalies_by_instance_id(instance_id) : 
+    with Session(get_engine()) as session : 
+        return session.exec(select(Anomaly).where(Anomaly.instance_id == instance_id)).all()

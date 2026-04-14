@@ -21,7 +21,7 @@ class Anomaly(SQLModel , table=True) :
     detection_date: date = Field(default=datetime.now().date() ) 
     duration : int = Field(default=0 , description="How many seconds anomaly detected")
 
-    instance : str | None = Field(default=None , foreign_key="instance.instance_id")
+    instance_id : str | None = Field(default=None , foreign_key="instance.instance_id")
 
 class Incident(SQLModel , table=True ) : 
     incident_id : str | None = Field(default=None , primary_key=True)
