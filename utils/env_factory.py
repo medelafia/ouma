@@ -7,7 +7,11 @@ variables = {
     "INFLUX_DB_BUCKET" : None, 
     "INFLUX_DB_ORG" : None , 
     "INFLUX_DB_TOKEN" : None , 
-    "INFLUX_DB_URL" : None
+    "INFLUX_DB_URL" : None , 
+    "MYSQL_USER" : None , 
+    "MYSQL_PASSWORD" : None , 
+    "MYSQL_DB" : None , 
+    "MYSQL_HOST" : None
 }
 
 def get_config(variable_key) : 

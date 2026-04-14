@@ -1,17 +1,24 @@
 from utils.env_factory import get_config
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import SQLModel, create_engine
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+MYSQL_USER = get_config("MYSQL_USER")
+MYSQL_PASSWORD = get_config("MYSQL_PASSWORD")
+MYSQL_DB = get_config("MYSQL_DB")
+MYSQL_HOST = get_config("MYSQL_HOST")
+
+mysql_url = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}?charset=utf8mb4"
 
 connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+engine = None
 
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(get_engine())
 
 
-def get_session():
-    with Session(engine) as session:
-        yield session
+def get_engine() : 
+    global engine
+    if engine == None : 
+        engine = create_engine(mysql_url)
+
+    return engine
