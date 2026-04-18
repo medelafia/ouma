@@ -22,7 +22,7 @@ def get_instance_by_id(id) :
 
 
 def get_instance_by_host_and_port(host , port) : 
-    for instance in instances : 
+    for instance in get_instances() : 
         if instance.ip_address == host and instance.port == port : 
             return instance
     return None

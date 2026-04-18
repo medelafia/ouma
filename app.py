@@ -15,7 +15,7 @@ sched =  BackgroundScheduler()
 app = FastAPI()
 
 
-@sched.scheduled_job('interval' , id='my_job_id',  minutes=5)
+@sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
 def prediction_jon() : 
     if is_prediction_service_ready() :
         metrics = fetch_metrics()

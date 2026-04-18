@@ -33,7 +33,7 @@ def check_timestamp_existance(list_obj , timestamp  ) :
 
 def get_threshold(df , key , metric) : 
     global thresholds
-    if thresholds[key] is None : 
+    if key not in thresholds : 
         thresholds[key] = { "cpu" : None , "memory" : None }
     if thresholds[key][metric] is None :
         col = "CPU usage [%]" if metric == 'cpu' else "Memory usage [%]" 
@@ -57,7 +57,9 @@ def prepare_data_input(metrics) :
         if metric['value']['status'] == 'success' : 
             for i in range(len(metric['value']['data']['result'])) :
                 metrics_result = metric['value']['data']['result'][i]
-                instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , metrics_result['metric']['instance'].split(':')[1])
+                print(metrics_result['metric']['instance'])
+                #instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1]))
+                instance_id = get_instance_by_host_and_port("localhost" , int(metrics_result['metric']['instance'].split(':')[1])).instance_id
                 if instance_id not in data :
                     data[instance_id] = []
                 
@@ -113,8 +115,11 @@ def prepare_data_input(metrics) :
 
         #values[i] = scaler.transform(dataframes[key])
         values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values 
-        values[key] = scaler.transform(values[i])
+        values[key] = scaler.transform(values[key])
 
+
+    print("values " , values.keys())
+    print("dataframes " , dataframes.keys())
     return dataframes , values 
 
 
@@ -132,16 +137,16 @@ def predict_next_and_save(metrics) :
     output_scaler = load_min_max_scaler(type="output")
     results = {}
     for key in input_values_sequence_dict :
-        print(input_values_sequence_dict[key])
         input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1 , 24 , 16) 
         predictions = model.predict(input_values_sequence_dict[key])
         predictions = output_scaler.inverse_transform(predictions) 
-        print(predictions)
-        predicted_datetime = dfs[key].iloc[-1].index + timedelta(minutes=5)
+        print(predictions , " , last date " + str(dfs[key].tail(1).index[0]))
+        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=5)
         predicted_memory = predictions[0][1]
         predicted_cpu = predictions[0][0]
         
-        save_prediction(key, MetricsPrediction(predicted_datetime , key , predicted_cpu ,predicted_memory) ) 
+        print(key)
+        save_prediction(key, MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory) ) 
         threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
         threshold_memory = get_threshold(dfs[key] , key , 'memory')
 

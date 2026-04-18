@@ -9,8 +9,8 @@ from datetime import date , time ,datetime
 
 class Prediction(BaseModel ) : 
     timestamp: datetime 
-    anomaly_score: float 
-    instance_id : str
+    anomaly_score: float = Field(default=0)
+    instance_id : str 
 
 
 
