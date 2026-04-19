@@ -30,3 +30,8 @@ class Incident(SQLModel , table=True ) :
     description : str | None = Field(default=None)
 
     alert : str | None = Field(default=None , foreign_key="alert.alert_id")
+
+ 
+class User(SQLModel , table=True ) : 
+    username : str | None =Field( default=None , primary_key=True ) 
+    password : str | None = Field( default=None , primary_key=True ) 

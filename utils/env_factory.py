@@ -11,7 +11,8 @@ variables = {
     "MYSQL_USER" : None , 
     "MYSQL_PASSWORD" : None , 
     "MYSQL_DB" : None , 
-    "MYSQL_HOST" : None
+    "MYSQL_HOST" : None,
+    "SECRET_KEY": None
 }
 
 def get_config(variable_key) : 

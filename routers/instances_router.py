@@ -20,6 +20,12 @@ def get_all_services() :
         } 
         return error_response
 
+
+
+@instances_routers.get("/all/count") 
+def get_instances_count():
+    return { "count" : len(get_instances()) } 
+
 @instances_routers.get("/metrics") 
 def get_services_metrics() : 
     return fetch_metrics()
@@ -42,3 +48,5 @@ def get_predicted_metrics(instance_id) :
 def get_reals_metrics(instance_id) : 
     start_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )).isoformat().split(".")[0] + "Z"
     return load_metrics(instance_id, start_time , measurment="real_measurement")
+
+

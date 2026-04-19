@@ -2,7 +2,7 @@ from models.models import Alert
 from db.mysql_db_connection import create_db_and_tables , get_engine
 from uuid import uuid4 
 from datetime import  datetime
-from sqlmodel import Session , select
+from sqlmodel import Session , select , func 
 
 
 create_db_and_tables()
@@ -28,3 +28,9 @@ def get_alerts(limit) :
 def get_alert_by_anomaly(anomaly_id):
     with Session(get_engine()) as session :
         return session.exec(select(Alert).where(Alert.anomaly_id == anomaly_id)).all()    
+
+
+
+def get_alerts_count() : 
+    with Session(get_engine()) as session : 
+        return { "count" :  session.exec(select(func.count()).select_from(Alert)).one() } 
