@@ -18,3 +18,7 @@ def get_user_by_username(username):
 def check_user_password(user_password , password) : 
     with Session(get_engine()) as session : 
         return bcrypt.checkpw(password.encode("utf-8") , user_password.encode("utf-8"))
+
+
+
+save_user(User(username="admin" , password="admin"))
