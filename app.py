@@ -8,6 +8,11 @@ from routers.instances_router import instances_routers
 from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
 from services.ressource_prediction_services import predict_next_and_save , is_prediction_service_ready 
+from services.alerting_services import get_alerts_count 
+from services.alerting_services import get_alerts_count 
+from services.anomaly_service import get_anomalies_count
+from services.incident_services import get_incidents_count
+from services.prometheus_service import fetch_instances
 from services.prometheus_service import fetch_metrics 
 from routers.alert_router import alerts_router
 from routers.anomaly_router import anomaly_router
@@ -37,7 +42,7 @@ except :
     sched.shutdown()
 
 
-@app.post("/token")
+@app.post("/api/v1/auth/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user_by_username(form_data.username)
     if user is None or not check_user_password(user.password , form_data.password):
@@ -45,6 +50,14 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.get("/api/v1/kpis") 
+def get_kpis() :
+    return {
+        "anomalies" : get_anomalies_count() , 
+        "instances" : len(fetch_instances()) , 
+        "incidents" : get_incidents_count() , 
+        "alerts" : get_alerts_count()
+    }
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 
@@ -53,7 +66,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=['*']
 )
-
 app.include_router(incident_router)
 app.include_router(instances_routers)
 app.include_router(anomaly_router)

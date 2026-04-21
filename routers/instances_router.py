@@ -7,7 +7,7 @@ from auth.auth import get_current_user
 instances_routers = APIRouter(prefix="/api/v1/instances")
 
 @instances_routers.get("/all") 
-def get_all_services() : 
+def get_all_services(token : str = Depends(get_current_user)) : 
     try :
         instances = get_instances()
     
