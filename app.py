@@ -18,14 +18,24 @@ from routers.alert_router import alerts_router
 from routers.anomaly_router import anomaly_router
 from fastapi.security import OAuth2PasswordRequestForm
 from services.user_services import get_user_by_username
-from auth.auth import create_access_token , check_user_password
+from auth.auth import create_access_token , check_user_password , get_current_user
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from services.metadata_services import get_metadata
+
+@asynccontextmanager
+async def lifespan(app : FastAPI) :
+
+    print("Startup")
+    yield
+    print("shuting down")
+
 
 sched =  BackgroundScheduler()
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+interval = int(get_metadata("PREDICTION_INTERVAL"))
 
-
-@sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
+@sched.scheduled_job('interval' , id='my_job_id',  minutes=interval)
 def prediction_jon() : 
     if is_prediction_service_ready() :
         metrics = fetch_metrics()
@@ -50,8 +60,13 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+@app.get("/api/v1/users/me")
+def get_users_me(user : dict = Depends(get_current_user)) : 
+    return { "username" :user['username'] , "message" : "This is a protected route"}
+
 @app.get("/api/v1/kpis") 
-def get_kpis() :
+def get_kpis(token : dict = Depends(get_current_user)) :
     return {
         "anomalies" : get_anomalies_count() , 
         "instances" : len(fetch_instances()) , 

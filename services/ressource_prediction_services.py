@@ -24,6 +24,8 @@ anomalies = {
 thresholds = {
 }
 
+
+
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
         if record['timestamp'] == timestamp :
@@ -57,7 +59,6 @@ def prepare_data_input(metrics) :
         if metric['value']['status'] == 'success' : 
             for i in range(len(metric['value']['data']['result'])) :
                 metrics_result = metric['value']['data']['result'][i]
-                print(metrics_result['metric']['instance'])
                 #instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1]))
                 instance_id = get_instance_by_host_and_port("localhost" , int(metrics_result['metric']['instance'].split(':')[1])).instance_id
                 if instance_id not in data :
@@ -111,33 +112,35 @@ def prepare_data_input(metrics) :
         dataframes[key] = dataframes[key].fillna(method='bfill')
         dataframes[key] = dataframes[key].dropna()
 
-        dataframes[key] = dataframes[key].tail(24)
 
+        dataframes[key] = dataframes[key].tail(24)
+        dataframes[key]['Disk size [GB]'] = dataframes[key]['Disk size [GB]'] % 50
         #values[i] = scaler.transform(dataframes[key])
         values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values 
         values[key] = scaler.transform(values[key])
+        print(key + " : " , dataframes[key])
 
 
-    print("values " , values.keys())
-    print("dataframes " , dataframes.keys())
     return dataframes , values 
 
 
 def load_min_max_scaler(type) :
-    return pickle.load(open(f"others/scaler_lstm_ressource_prediction_{'data' if type == 'input' else 'labels'}.pkl" , 'rb')) 
+    return pickle.load(open(f"others/{type}_scaler.pkl" , 'rb')) 
 
 def load_lstm_model() :
     model = tf.keras.models.load_model("others/model.h5")
-
     return model
 
+model = load_lstm_model()
+
 def predict_next_and_save(metrics) : 
+    global model 
     dfs , input_values_sequence_dict = prepare_data_input(metrics)
-    model = load_lstm_model() 
     output_scaler = load_min_max_scaler(type="output")
     results = {}
     for key in input_values_sequence_dict :
-        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1 , 24 , 16) 
+        input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
+        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 24, 16)
         predictions = model.predict(input_values_sequence_dict[key])
         predictions = output_scaler.inverse_transform(predictions) 
         print(predictions , " , last date " + str(dfs[key].tail(1).index[0]))
@@ -145,7 +148,7 @@ def predict_next_and_save(metrics) :
         predicted_memory = predictions[0][1]
         predicted_cpu = predictions[0][0]
         
-        print(key)
+        print("predicted datetime" ,predicted_datetime)
         save_prediction(key, MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory) ) 
         threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
         threshold_memory = get_threshold(dfs[key] , key , 'memory')

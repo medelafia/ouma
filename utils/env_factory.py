@@ -12,14 +12,16 @@ variables = {
     "MYSQL_PASSWORD" : None , 
     "MYSQL_DB" : None , 
     "MYSQL_HOST" : None,
-    "SECRET_KEY": None
+    "SECRET_KEY": None , 
+    "TARGET_SERVER_HOST" : None , 
+    "PREDICTION_INTERVAL" : None , 
+    "ACTIVATE_ALERTING" : None 
 }
 
 def get_config(variable_key) : 
     global variables 
 
     if any([val is None for key , val in variables.items()]) : 
-        print("exec")
         for key in variables : 
             variables[key]= os.environ.get(key)
     
