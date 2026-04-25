@@ -22,6 +22,10 @@ from auth.auth import create_access_token , check_user_password , get_current_us
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from services.metadata_services import get_metadata
+from routers.metadata_router import metadata_router
+from utils.instance_factory import get_instance_by_host_and_port
+from services.influx_service import save_actual_records 
+
 
 @asynccontextmanager
 async def lifespan(app : FastAPI) :
@@ -33,13 +37,24 @@ async def lifespan(app : FastAPI) :
 
 sched =  BackgroundScheduler()
 app = FastAPI(lifespan=lifespan)
-interval = int(get_metadata("PREDICTION_INTERVAL"))
+interval = int(get_metadata().PREDICTION_INTERVAL)
 
 @sched.scheduled_job('interval' , id='my_job_id',  minutes=interval)
 def prediction_jon() : 
+    metrics = fetch_metrics()
+    print("doing job...")
+    data = {}
+    data.update()
+    for metric in metrics : 
+        if metric['name'] == "CPU usage [%]" or metric['name'] == "Memory usage [%]" : 
+            for res in metric['value']['data']['result'] : 
+                instance_id = get_instance_by_host_and_port(res['metric']['instance'].split(":")[0] ,res['metric']['instance'].split(":")[1] )
+                
+                data[instance_id].update({metric['name'].lower().split()[0] : res['values'][-1][1] , "timestamp" : res['values'][-1][0] }) 
+                
+    print(data)
     if is_prediction_service_ready() :
-        metrics = fetch_metrics()
-        print("doing job...")
+
         
         predict_next_and_save(metrics)
 
@@ -85,4 +100,5 @@ app.include_router(incident_router)
 app.include_router(instances_routers)
 app.include_router(anomaly_router)
 app.include_router(alerts_router)
+app.include_router(metadata_router)
 

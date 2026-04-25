@@ -60,7 +60,7 @@ def prepare_data_input(metrics) :
             for i in range(len(metric['value']['data']['result'])) :
                 metrics_result = metric['value']['data']['result'][i]
                 #instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1]))
-                instance_id = get_instance_by_host_and_port("localhost" , int(metrics_result['metric']['instance'].split(':')[1])).instance_id
+                instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1])).instance_id
                 if instance_id not in data :
                     data[instance_id] = []
                 

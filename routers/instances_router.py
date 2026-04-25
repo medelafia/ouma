@@ -7,7 +7,7 @@ from auth.auth import get_current_user
 instances_routers = APIRouter(prefix="/api/v1/instances")
 
 @instances_routers.get("/all") 
-def get_all_services(token : str = Depends(get_current_user)) : 
+def get_all_services(): #(token : strDepends(get_current_user)) : 
     try :
         instances = get_instances()
     
@@ -44,9 +44,8 @@ def get_predicted_metrics(instance_id , token : str = Depends(get_current_user))
     start_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )).isoformat().split(".")[0] + "Z"
     return load_metrics(instance_id, start_time , measurment="predicted_measurement")
 
-@instances_routers.get("/{instance_id}/metrics/reals" )
-def get_reals_metrics(instance_id ,token : str = Depends(get_current_user)) : 
+@instances_routers.get("/{instance_id}/metrics/real" )
+def get_reals_metrics(instance_id ) : #,token : str = Depends(get_current_user)
     start_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )).isoformat().split(".")[0] + "Z"
     return load_metrics(instance_id, start_time , measurment="real_measurement")
-
 

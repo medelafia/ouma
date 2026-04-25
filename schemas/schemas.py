@@ -56,3 +56,10 @@ class User(BaseModel) :
     password : str = Field(None , description="Password is required , please entert a valid password")
     email: EmailStr
 
+
+
+class Metadata(BaseModel) : 
+    TARGET_SERVER_HOST : str | None = Field(None ) 
+    TARGET_SERVER_PORT: int | None = Field(None ) 
+    PREDICTION_INTERVAL : int | None = Field(None) 
+    ACTIVATE_ALERTING : bool | None = Field(None )

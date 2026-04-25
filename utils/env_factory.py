@@ -15,7 +15,8 @@ variables = {
     "SECRET_KEY": None , 
     "TARGET_SERVER_HOST" : None , 
     "PREDICTION_INTERVAL" : None , 
-    "ACTIVATE_ALERTING" : None 
+    "ACTIVATE_ALERTING" : None  , 
+    "TARGET_SERVER_PORT" : None
 }
 
 def get_config(variable_key) : 

@@ -1,7 +1,7 @@
 from db.sqlite_db_connection import get_connection 
 import sqlite3 
 from utils.env_factory import get_config
-
+from schemas.schemas import Metadata
 
 
 def create_metadata_table() : 
@@ -16,23 +16,31 @@ def create_metadata_table() :
             cursor.close()
         except sqlite3.Error as err : 
             print(err)
+def parse_value(value : str):
+    if value.isnumeric() :
+        return int(value) 
+    elif value in ['True' , 'False'] :
+        return bool(value) 
+    else :
+        return value
+
 
 metadata = None
 create_metadata_table()
 
-def get_metadata(name) : 
+def get_metadata() : 
     if metadata is None : 
         print("metadata not found, loading from db") 
         load_metadata()
 
-    return metadata[name]
+    return metadata
 
 def get_metadata_from_db(name) : 
     with get_connection("db/metadata.db") as con :
         try: 
             cursor = con.cursor()   
             cursor.execute("SELECT * FROM Metadata WHERE name=?" , (name,))
-            return cursor.fetchone()[1]
+            return cursor.fetchone()
         except sqlite3.Error as err : 
             print(err) 
         
@@ -51,7 +59,6 @@ def set_metadata(name , new_value) :
         finally : 
             cursor.close()
 
-
 def save_metadata(name , value) : 
      with get_connection("db/metadata.db") as con :
         try: 
@@ -67,15 +74,19 @@ def save_metadata(name , value) :
 def load_metadata() : 
     global metadata
     if metadata is None :
-        metadata = {}
-        for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' ] : 
+        metadata = Metadata()
+        for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' , 'TARGET_SERVER_PORT' ] : 
             founded_value = get_metadata_from_db(i)
 
             if founded_value is None : 
-                print("saving " +  get_config(i) + " to " + i)
                 save_metadata(i , get_config(i))
-                metadata[i] = get_config(i)
+                setattr(metadata, i , parse_value(get_config(i)))
             else : 
-                print(i + " founded " + founded_value)
-                metadata[i] = founded_value
+                setattr(metadata, i , parse_value(founded_value[1]))
+    return metadata
+
+
+def update_metadata( metadata : Metadata ) : 
+    for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' , 'TARGET_SERVER_PORT' ] :  
+        save_metadata(i , metadata.model_dump()[i])
     return metadata

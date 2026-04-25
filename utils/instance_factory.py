@@ -12,7 +12,7 @@ def get_instances() :
         print(fetch_instances())
         for instance in fetch_instances() : 
             try :
-                host = "localhost"
+                host = instance['labels']['instance'].split(":")[0]
                 port = int(instance['labels']['instance'].split(":")[1])
                 founded_instance = load_instance_by_host_and_port(host , port ) 
 
