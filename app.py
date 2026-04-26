@@ -24,9 +24,9 @@ from contextlib import asynccontextmanager
 from services.metadata_services import get_metadata
 from routers.metadata_router import metadata_router
 from utils.instance_factory import get_instance_by_host_and_port
-from services.influx_service import save_actual_records 
-
-
+from services.influx_service import save_actual_records  , save_prediction
+import datetime
+from schemas.schemas import MetricsPrediction
 @asynccontextmanager
 async def lifespan(app : FastAPI) :
 
@@ -40,26 +40,30 @@ app = FastAPI(lifespan=lifespan)
 interval = int(get_metadata().PREDICTION_INTERVAL)
 
 @sched.scheduled_job('interval' , id='my_job_id',  minutes=interval)
-def prediction_jon() : 
+def prediction_job() : 
     metrics = fetch_metrics()
     print("doing job...")
     data = {}
-    data.update()
     for metric in metrics : 
         if metric['name'] == "CPU usage [%]" or metric['name'] == "Memory usage [%]" : 
             for res in metric['value']['data']['result'] : 
-                instance_id = get_instance_by_host_and_port(res['metric']['instance'].split(":")[0] ,res['metric']['instance'].split(":")[1] )
-                
-                data[instance_id].update({metric['name'].lower().split()[0] : res['values'][-1][1] , "timestamp" : res['values'][-1][0] }) 
-                
-    print(data)
-    if is_prediction_service_ready() :
+                instance = get_instance_by_host_and_port(res['metric']['instance'].split(":")[0] ,res['metric']['instance'].split(":")[1] )
+                instance_id = instance.instance_id
+                timestamp = datetime.datetime.fromtimestamp(res['values'][-1][0], tz=datetime.timezone.utc)
+                if instance_id in data : 
+                    data[instance_id].update({metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp})
+                else: 
+                    data[instance_id] = {metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp}
+    
+    for instance_id in data : 
+        print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
+        print("INFO:insert value ",save_prediction(MetricsPrediction(instance_id=instance_id ,timestamp= data[instance_id]['timestamp'] , anomaly_score=0.1 , cpu_usage=data[instance_id]['cpu'] , memory_usage=data[instance_id]['memory']) ))
 
-        
+    if is_prediction_service_ready(metrics) :
         predict_next_and_save(metrics)
 
     else : 
-        print("Prediction services not ready to predict next values, cause the prediction requires past 24 values")
+        print("INFO:Prediction services not ready to predict next values, cause the prediction requires past 24 values")
 
 try :
     sched.start()

@@ -185,5 +185,5 @@ def predict_next_and_save(metrics) :
         results[key] = predictions
     return results
 
-def is_prediction_service_ready() :
-    return len(fetch_metrics()[0]['value']['data']['result'][0]['values']) > 29
+def is_prediction_service_ready(metrics) :
+    return len(metrics[0]['value']['data']['result'][0]['values']) >= 29

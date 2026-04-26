@@ -1,7 +1,7 @@
 from fastapi import APIRouter , Depends 
 from services.prometheus_service import fetch_metrics  , fetch_instance_metrics
 import datetime 
-from services.influx_service import load_metrics
+from services.influx_service import load_metrics , load_all_metrics
 from utils.instance_factory import get_instances , get_instance_by_id 
 from auth.auth import get_current_user
 instances_routers = APIRouter(prefix="/api/v1/instances")
@@ -41,11 +41,18 @@ def get_service_metrics(instance_id , token : str = Depends(get_current_user)):
 @instances_routers.get("/{instance_id}/metrics/predicted")
 def get_predicted_metrics(instance_id , token : str = Depends(get_current_user)) : 
     ## to query by date in influxdb , the date should be in utc format
-    start_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )).isoformat().split(".")[0] + "Z"
+    start_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )
+
     return load_metrics(instance_id, start_time , measurment="predicted_measurement")
 
 @instances_routers.get("/{instance_id}/metrics/real" )
 def get_reals_metrics(instance_id ) : #,token : str = Depends(get_current_user)
-    start_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )).isoformat().split(".")[0] + "Z"
+    start_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )
+
     return load_metrics(instance_id, start_time , measurment="real_measurement")
 
+@instances_routers.get("/{instance_id}/metrics/all" )
+def get_reals_metrics(instance_id ) : #,token : str = Depends(get_current_user)
+    start_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )
+
+    return load_all_metrics(instance_id, start_time )

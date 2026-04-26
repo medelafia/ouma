@@ -42,6 +42,6 @@ def get_instance_by_id(id) :
 
 def get_instance_by_host_and_port(host , port) : 
     for instance in get_instances() : 
-        if instance.ip_address == host and instance.port == port : 
+        if instance.ip_address == host and instance.port == int(port) : 
             return instance
     return None

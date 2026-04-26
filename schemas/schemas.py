@@ -8,7 +8,7 @@ from datetime import date , time ,datetime
 
 
 class Prediction(BaseModel ) : 
-    timestamp: datetime 
+    timestamp : datetime | None
     anomaly_score: float = Field(default=0)
     instance_id : str 
 
