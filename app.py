@@ -39,7 +39,7 @@ sched =  BackgroundScheduler()
 app = FastAPI(lifespan=lifespan)
 interval = int(get_metadata().PREDICTION_INTERVAL)
 
-@sched.scheduled_job('interval' , id='my_job_id',  minutes=interval)
+@sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
 def prediction_job() : 
     metrics = fetch_metrics()
     print("doing job...")
@@ -57,8 +57,7 @@ def prediction_job() :
     
     for instance_id in data : 
         print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
-        print("INFO:insert value ",save_prediction(MetricsPrediction(instance_id=instance_id ,timestamp= data[instance_id]['timestamp'] , anomaly_score=0.1 , cpu_usage=data[instance_id]['cpu'] , memory_usage=data[instance_id]['memory']) ))
-
+  
     if is_prediction_service_ready(metrics) :
         predict_next_and_save(metrics)
 

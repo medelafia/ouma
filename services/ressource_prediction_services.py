@@ -24,6 +24,16 @@ anomalies = {
 thresholds = {
 }
 
+def load_min_max_scaler(type) :
+    return pickle.load(open(f"others/{type}_scaler.pkl" , 'rb')) 
+
+def load_lstm_model() :
+    model = tf.keras.models.load_model("others/model.h5")
+    return model
+
+model = load_lstm_model()
+input_scaler = load_min_max_scaler('input')
+output_scaler = load_min_max_scaler('output')
 
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
@@ -83,7 +93,7 @@ def prepare_data_input(metrics) :
     and in the same time i tried to preprocess the data following the same stepss in
     the model training process, and adding some additionnal features such as cpu_lag5...
     """
-    scaler = load_min_max_scaler('input')
+
     dataframes = { key : pd.DataFrame(data[key]) for key in data }
     values = {}
     for key in dataframes: 
@@ -102,9 +112,13 @@ def prepare_data_input(metrics) :
 
         dataframes[key]['cpu_lag1'] = dataframes[key]['CPU usage [%]'].shift(1)
         dataframes[key]['cpu_lag5'] = dataframes[key]['CPU usage [%]'].shift(5)
+        dataframes[key]['memory_lag1'] = dataframes[key]['Memory usage [%]'].shift(1)
+        dataframes[key]['memory_lag5'] = dataframes[key]['Memory usage [%]'].shift(5)
 
         dataframes[key]['cpu_mean'] = dataframes[key]['CPU usage [%]'].rolling(5).mean()
         dataframes[key]['cpu_std'] = dataframes[key]['CPU usage [%]'].rolling(5).std()
+        dataframes[key]['memory_mean'] = dataframes[key]['Memory usage [%]'].rolling(5).mean()
+        dataframes[key]['memory_std'] = dataframes[key]['Memory usage [%]'].rolling(5).std()
         ### deleteing the first 5 data records , because they will contain noisy rows 
 
         
@@ -114,42 +128,37 @@ def prepare_data_input(metrics) :
 
 
         dataframes[key] = dataframes[key].tail(24)
-        dataframes[key]['Disk size [GB]'] = dataframes[key]['Disk size [GB]'] % 50
+        dataframes[key]['Disk size [GB]'] = dataframes[key]['Disk size [GB]'] 
+
         #values[i] = scaler.transform(dataframes[key])
-        values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']].values 
-        values[key] = scaler.transform(values[key])
-        print(key + " : " , dataframes[key])
+        values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]','Disk size [GB]','hour','day','weekday','cpu_lag1','cpu_lag5','memory_lag1','memory_lag5','cpu_mean','cpu_std','memory_mean','memory_std']].values 
+        print("Dataframe : \n" , dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']])
+        values[key] = input_scaler.transform(values[key])
+        print(key + " : " , values[key])
 
 
     return dataframes , values 
 
 
-def load_min_max_scaler(type) :
-    return pickle.load(open(f"others/{type}_scaler.pkl" , 'rb')) 
 
-def load_lstm_model() :
-    model = tf.keras.models.load_model("others/model.h5")
-    return model
-
-model = load_lstm_model()
 
 def predict_next_and_save(metrics) : 
     global model 
     dfs , input_values_sequence_dict = prepare_data_input(metrics)
-    output_scaler = load_min_max_scaler(type="output")
     results = {}
     for key in input_values_sequence_dict :
         input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
-        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 24, 16)
+        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 24, 17)
         predictions = model.predict(input_values_sequence_dict[key])
         predictions = output_scaler.inverse_transform(predictions) 
-        print(predictions , " , last date " + str(dfs[key].tail(1).index[0]))
+        print("INFO:predictions :" ,predictions)
         predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=5)
         predicted_memory = predictions[0][1]
         predicted_cpu = predictions[0][0]
         
-        print("predicted datetime" ,predicted_datetime)
-        save_prediction(key, MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory) ) 
+        print("INFO:next predicted datetime :" ,np.clip(predictions , 0 , 100))
+
+        print("INFO:insert value ",save_prediction(MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory) ) )
         threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
         threshold_memory = get_threshold(dfs[key] , key , 'memory')
 
