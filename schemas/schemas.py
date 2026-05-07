@@ -23,6 +23,8 @@ class Instance(BaseModel) :
     instance_id: str 
     port : int 
     ip_address : str
+    cpu_usage : float | None 
+    memory_usage : float  | None 
 
 
 class Amomaly(BaseModel) :

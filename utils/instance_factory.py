@@ -18,10 +18,10 @@ def get_instances() :
 
                 if founded_instance is not None : 
                     print("INFO:loading instance data from the database for fast access")
-                    data.append(Instance(instance_id=founded_instance[0], port=port, ip_address=host))
+                    data.append(Instance(instance_id=founded_instance[0], port=port, ip_address=host , cpu_usage=None, memory_usage=None))
                 else : 
                     print("instance not found in the database")
-                    new_instance = Instance(instance_id=str(uuid4()), port=port, ip_address=host)
+                    new_instance = Instance(instance_id=str(uuid4()), port=port, ip_address=host, cpu_usage=None, memory_usage=None)
                     data.append(new_instance)
                     save_instance(new_instance)
             except Exception as ex : 

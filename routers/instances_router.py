@@ -1,5 +1,5 @@
 from fastapi import APIRouter , Depends 
-from services.prometheus_service import fetch_metrics  , fetch_instance_metrics
+from services.prometheus_service import fetch_metrics  , fetch_instance_metrics, fetch_instance_ressources
 import datetime 
 from services.influx_service import load_metrics , load_all_metrics
 from utils.instance_factory import get_instances , get_instance_by_id 
@@ -10,7 +10,9 @@ instances_routers = APIRouter(prefix="/api/v1/instances")
 def get_all_services(): #(token : strDepends(get_current_user)) : 
     try :
         instances = get_instances()
-    
+
+        for instance in instances : 
+            instance.cpu_usage , instance.memory_usage = fetch_instance_ressources(instance) 
         return instances
     except Exception as ex:
         error_response = {

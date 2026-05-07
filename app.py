@@ -38,7 +38,7 @@ sched =  BackgroundScheduler()
 app = FastAPI(lifespan=lifespan)
 interval = int(get_metadata().PREDICTION_INTERVAL)
 
-@sched.scheduled_job('interval' , id='my_job_id',  minutes=5)
+@sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
 def prediction_job() : 
     metrics = fetch_metrics()
     print("doing job...")

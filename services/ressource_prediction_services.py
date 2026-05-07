@@ -5,6 +5,7 @@ import pickle
 from services.influx_service import save_prediction 
 from schemas.schemas import MetricsPrediction
 from datetime import timedelta
+import xgboost
 import sklearn
 import numpy as np
 from utils.instance_factory import get_instance_by_host_and_port
@@ -24,16 +25,17 @@ anomalies = {
 thresholds = {
 }
 
-def load_min_max_scaler(type) :
-    return pickle.load(open(f"others/{type}_scaler.pkl" , 'rb')) 
 
-def load_lstm_model() :
-    model = tf.keras.models.load_model("others/model.h5")
+def load_pkl(name) :
+    model = pickle.load(open(f"others/{name}.pkl", 'rb'))
     return model
 
-model = load_lstm_model()
-input_scaler = load_min_max_scaler('input')
-output_scaler = load_min_max_scaler('output')
+memory_model = load_pkl("memory_model")
+cpu_model = load_pkl("cpu_model")
+
+
+input_scaler = load_pkl('input_scaler')
+output_scaler = load_pkl('output_scaler')
 
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
@@ -132,11 +134,25 @@ def prepare_data_input(metrics) :
 
         #values[i] = scaler.transform(dataframes[key])
         values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]','Disk size [GB]','hour','day','weekday','cpu_lag1','cpu_lag5','memory_lag1','memory_lag5','cpu_mean','cpu_std','memory_mean','memory_std']].values 
-        print("Dataframe : \n" , dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]', 'Disk read throughput [KB/s]','Disk write throughput [KB/s]','Disk size [GB]','Network received throughput [KB/s]','hour','day','weekday','cpu_lag1','cpu_lag5','cpu_mean','cpu_std']])
         values[key] = input_scaler.transform(values[key])
-        print(key + " : " , values[key])
+        
+        feature_columns = [
+            "cpu_lag1",
+            "cpu_lag5",
 
+            "memory_lag1",
+            "memory_lag5",
 
+            "cpu_mean",
+            "cpu_std",
+
+            "memory_mean",
+            "memory_std",
+            "CPU usage [%]", 
+            "Memory usage [%]"
+
+        ]
+        dataframes[key] = dataframes[key][feature_columns]
     return dataframes , values 
 
 
@@ -147,16 +163,16 @@ def predict_next_and_save(metrics) :
     dfs , input_values_sequence_dict = prepare_data_input(metrics)
     results = {}
     for key in input_values_sequence_dict :
-        input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
-        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 10, 17)
-        predictions = model.predict(input_values_sequence_dict[key])
-        predictions = output_scaler.inverse_transform(predictions) 
-        print("INFO:predictions :" ,predictions)
-        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=5)
-        predicted_memory = predictions[0][1]
-        predicted_cpu = predictions[0][0]
+        #input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
+        #input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 10, 17)
+        #predictions = model.predict(input_values_sequence_dict[key])
+        #predictions = output_scaler.inverse_transform(predictions) 
+        #print("INFO:predictions :" ,predictions)
+        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=1)
+        #predictions = model.predict(input_values_sequence_dict[key])
+        predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].drop(["CPU usage [%]", "Memory usage [%]"] ,axis=1).tail(1))[0] , cpu_model.predict(dfs[key].drop(["CPU usage [%]", "Memory usage [%]"] ,axis=1).tail(1))[0]
         
-        print("INFO:next predicted datetime :" ,np.clip(predictions , 0 , 100))
+        print("INFO:next predicted datetime :" ,predicted_datetime)
 
         print("INFO:insert value ",save_prediction(MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory) ) )
         threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
@@ -194,7 +210,7 @@ def predict_next_and_save(metrics) :
             anomalies['memory']['count'] = 0 
             anomalies['memory']['anomaly'] = None
 
-        results[key] = predictions
+        results[key] = [[predicted_cpu , predicted_memory]]
     return results
 
 def is_prediction_service_ready(metrics) :
