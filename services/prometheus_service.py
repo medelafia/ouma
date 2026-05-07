@@ -53,12 +53,12 @@ def fetch_instance_metrics(instance_host) :
     return responses_metrics
 
 def fetch_instances() : 
-    """ 
-        This function responsible for fetching services from eureka discovery
-    """
     json_response = execute_query(PROMETHEUS_URL + "/targets")
     services = [service for service in json_response['data']['activeTargets']] 
     return services
+
+
+
 
 def check_service_health(service_name) : 
     """
@@ -66,3 +66,4 @@ def check_service_health(service_name) :
     """
     response = requests.get(PROMETHEUS_URL)
     return response
+

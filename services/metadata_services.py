@@ -16,6 +16,7 @@ def create_metadata_table() :
             cursor.close()
         except sqlite3.Error as err : 
             print(err)
+        
 def parse_value(value : str):
     if value.isnumeric() :
         return int(value) 
@@ -30,7 +31,7 @@ create_metadata_table()
 
 def get_metadata() : 
     if metadata is None : 
-        print("metadata not found, loading from db") 
+        print("INFO:metadata not found, loading from db") 
         load_metadata()
 
     return metadata
@@ -51,7 +52,7 @@ def set_metadata(name , new_value) :
     with get_connection("db/metadata.db") as con :
         try: 
             cursor = con.cursor()   
-            cursor.execute("UPDATE Metadata SET value=:new_value WHERE name=:name" , {new_value : new_value , name : name})
+            cursor.execute("UPDATE Metadata SET value=? WHERE name=?" , (new_value , name))
             con.commit()
         except sqlite3.Error as err : 
             print(err) 
@@ -86,7 +87,10 @@ def load_metadata() :
     return metadata
 
 
-def update_metadata( metadata : Metadata ) : 
-    for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' , 'TARGET_SERVER_PORT' ] :  
-        save_metadata(i , metadata.model_dump()[i])
+def update_metadata( request_metadata : Metadata ) : 
+    global metadata
+    for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' , 'TARGET_SERVER_PORT' ] : 
+        print(request_metadata.model_dump()[i]) 
+        set_metadata(i , request_metadata.model_dump()[i])
+        setattr(metadata , i, request_metadata.model_dump()[i])
     return metadata

@@ -13,12 +13,12 @@ engine = None
 
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(get_engine())
+    SQLModel.metadata.create_all(get_engine() )
 
 
 def get_engine() : 
     global engine
     if engine == None : 
-        engine = create_engine(mysql_url)
+        engine = create_engine(mysql_url )
 
     return engine

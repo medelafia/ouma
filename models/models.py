@@ -1,10 +1,6 @@
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from datetime import time , date , datetime 
 
-class Instance(SQLModel, table=True):
-    instance_id : str | None = Field(default=None, primary_key=True)
-    ip_address : str = Field(index=True)
-    port : int | None = Field(default=None, index=True)
 
 class Alert(SQLModel , table=True) : 
     alert_id : str | None = Field(default=None , primary_key = True )
@@ -21,7 +17,7 @@ class Anomaly(SQLModel , table=True) :
     detection_date: date = Field(default=datetime.now().date() ) 
     duration : int = Field(default=0 , description="How many seconds anomaly detected")
 
-    instance_id : str | None = Field(default=None , foreign_key="instance.instance_id")
+    instance_id : str | None = Field(default=None)
 
 class Incident(SQLModel , table=True ) : 
     incident_id : str | None = Field(default=None , primary_key=True)

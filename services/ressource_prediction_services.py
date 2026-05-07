@@ -9,8 +9,8 @@ import sklearn
 import numpy as np
 from utils.instance_factory import get_instance_by_host_and_port
 from services.alerting_services import send_alert
-from services.anomaly_service import create_and_save_anomaly
-
+from services.anomaly_service import create_and_save_anomaly ,  save_anomaly
+import datetime
 anomalies = { 
     "memory" :  {
         "count" : 0 ,  
@@ -127,7 +127,7 @@ def prepare_data_input(metrics) :
         dataframes[key] = dataframes[key].dropna()
 
 
-        dataframes[key] = dataframes[key].tail(24)
+        dataframes[key] = dataframes[key].tail(10)
         dataframes[key]['Disk size [GB]'] = dataframes[key]['Disk size [GB]'] 
 
         #values[i] = scaler.transform(dataframes[key])
@@ -148,7 +148,7 @@ def predict_next_and_save(metrics) :
     results = {}
     for key in input_values_sequence_dict :
         input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
-        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 24, 17)
+        input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 10, 17)
         predictions = model.predict(input_values_sequence_dict[key])
         predictions = output_scaler.inverse_transform(predictions) 
         print("INFO:predictions :" ,predictions)
@@ -172,6 +172,9 @@ def predict_next_and_save(metrics) :
             else :
                 send_alert(f"CRITICAL: CPU high repeatedly (x{anomalies['cpu']['count']})" ,"HIGH" , anomalies['cpu']['anomaly'].anomaly_id)
             anomalies['cpu']['count'] += 1  
+            combined_datetime = datetime.datetime.combine(anomalies['cpu']['anomaly'].detection_date , anomalies['cpu']['anomaly'].detection_time) 
+            anomalies['cpu']['anomaly'].duration = (datetime.datetime.now() - combined_datetime).total_seconds()
+            anomalies['cpu']['anomaly'] = save_anomaly(anomalies['cpu']['anomaly'])
         else : 
             anomalies['cpu']['count'] = 0 
             anomalies['cpu']['anomaly'] = None
@@ -195,4 +198,4 @@ def predict_next_and_save(metrics) :
     return results
 
 def is_prediction_service_ready(metrics) :
-    return len(metrics[0]['value']['data']['result'][0]['values']) >= 29
+    return len(metrics[0]['value']['data']['result'][0]['values']) >= 16

@@ -8,10 +8,9 @@ from routers.instances_router import instances_routers
 from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
 from services.ressource_prediction_services import predict_next_and_save , is_prediction_service_ready 
-from services.alerting_services import get_alerts_count 
-from services.alerting_services import get_alerts_count 
+from services.alerting_services import get_alerts_count , get_overview
 from services.anomaly_service import get_anomalies_count
-from services.incident_services import get_incidents_count
+from services.incident_services import get_incidents_count 
 from services.prometheus_service import fetch_instances
 from services.prometheus_service import fetch_metrics 
 from routers.alert_router import alerts_router
@@ -39,7 +38,7 @@ sched =  BackgroundScheduler()
 app = FastAPI(lifespan=lifespan)
 interval = int(get_metadata().PREDICTION_INTERVAL)
 
-@sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
+@sched.scheduled_job('interval' , id='my_job_id',  minutes=5)
 def prediction_job() : 
     metrics = fetch_metrics()
     print("doing job...")
@@ -91,6 +90,10 @@ def get_kpis(token : dict = Depends(get_current_user)) :
         "incidents" : get_incidents_count() , 
         "alerts" : get_alerts_count()
     }
+@app.get("/api/v1/overview") 
+def get_overview_route() : 
+    return get_overview()
+
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 

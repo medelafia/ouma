@@ -16,8 +16,12 @@ variables = {
     "TARGET_SERVER_HOST" : None , 
     "PREDICTION_INTERVAL" : None , 
     "ACTIVATE_ALERTING" : None  , 
-    "TARGET_SERVER_PORT" : None
-}
+    "TARGET_SERVER_PORT" : None , 
+    "SYSTEM_EMAIL" : None ,  
+    "SMTP_SERVER" : None , 
+    "SMTP_PORT" : None , 
+    "SYSTEM_EMAIL_PASSWORD" : None 
+} 
 
 def get_config(variable_key) : 
     global variables 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel  , EmailStr , Field
 from typing import Optional 
 from datetime import date , time ,datetime
-
+from typing import List
 
  
 ##################### Prediction Engine related schemas #####################
@@ -63,3 +63,13 @@ class Metadata(BaseModel) :
     TARGET_SERVER_PORT: int | None = Field(None ) 
     PREDICTION_INTERVAL : int | None = Field(None) 
     ACTIVATE_ALERTING : bool | None = Field(None )
+
+
+class PageMetadata(BaseModel): 
+    page : int 
+    size : int 
+    totalPages : int
+
+class Page(BaseModel) : 
+    content : List 
+    metadata : PageMetadata

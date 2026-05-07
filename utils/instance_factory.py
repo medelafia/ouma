@@ -7,7 +7,7 @@ instances = None
 def get_instances() : 
     global instances
     if instances is None : 
-        print("value is none , loading from prometheus")
+        print("INFO:instances data is none , loading from prometheus")
         data = []
         print(fetch_instances())
         for instance in fetch_instances() : 
@@ -17,7 +17,7 @@ def get_instances() :
                 founded_instance = load_instance_by_host_and_port(host , port ) 
 
                 if founded_instance is not None : 
-                    print("loading instance from the data base for fast access")
+                    print("INFO:loading instance data from the database for fast access")
                     data.append(Instance(instance_id=founded_instance[0], port=port, ip_address=host))
                 else : 
                     print("instance not found in the database")
@@ -29,7 +29,7 @@ def get_instances() :
         print(data)
         instances = data[::] 
     else :
-        print("value exists in memory")
+        print("INFO:instances data exists in memory")
     return instances 
 
 def get_instance_by_id(id) :
