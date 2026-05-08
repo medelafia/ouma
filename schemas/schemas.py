@@ -42,11 +42,12 @@ class Alert(BaseModel) :
 
 
 class Incident(BaseModel) :
-    incident_id : str 
+    incident_id : str | None = Field(None )
     incident_time : time 
     incident_date : date
     description : str 
 
+    alert_id : str
 
 
 

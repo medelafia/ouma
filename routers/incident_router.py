@@ -1,6 +1,8 @@
 from fastapi import APIRouter , Depends
-from services.incident_services import get_all_incidents, get_incidents_count 
+from services.incident_services import get_all_incidents, get_incidents_count , save_incident
 from auth.auth import get_current_user
+from schemas.schemas import Incident
+
 from datetime import datetime 
 incident_router = APIRouter(prefix="/api/v1/incidents")
 
@@ -15,3 +17,7 @@ def get_all_incidents_route(from_date : str , to : str , token : str = Depends(g
 def get_incidents_count_route(token : str = Depends(get_current_user)) : 
     return get_incidents_count( )
 
+
+@incident_router.post("/")
+def save_incident_route(incident : Incident , token : str = Depends(get_current_user)) : 
+    return save_incident(incident)
