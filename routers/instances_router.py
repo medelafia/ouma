@@ -1,13 +1,16 @@
-from fastapi import APIRouter , Depends 
-from services.prometheus_service import fetch_metrics  , fetch_instance_metrics, fetch_instance_ressources
+from fastapi import APIRouter , Depends , HTTPException
+from services.prometheus_service import fetch_metrics  , fetch_instance_metrics, fetch_instance_ressources 
 import datetime 
-from services.influx_service import load_metrics , load_all_metrics
+from services.influx_service import load_metrics , load_all_metrics, delete_all_metrics_by_instance_id
 from utils.instance_factory import get_instances , get_instance_by_id 
 from auth.auth import get_current_user
+
+
+
 instances_routers = APIRouter(prefix="/api/v1/instances")
 
 @instances_routers.get("/all") 
-def get_all_services(): #(token : strDepends(get_current_user)) : 
+def get_all_services(token : str = Depends(get_current_user)) : 
     try :
         instances = get_instances()
 
@@ -48,13 +51,26 @@ def get_predicted_metrics(instance_id , token : str = Depends(get_current_user))
     return load_metrics(instance_id, start_time , measurment="predicted_measurement")
 
 @instances_routers.get("/{instance_id}/metrics/real" )
-def get_reals_metrics(instance_id ) : #,token : str = Depends(get_current_user)
+def get_reals_metrics(instance_id ,token : str = Depends(get_current_user)):
     start_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )
 
     return load_metrics(instance_id, start_time , measurment="real_measurement")
 
 @instances_routers.get("/{instance_id}/metrics/all" )
-def get_reals_metrics(instance_id ) : #,token : str = Depends(get_current_user)
-    start_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5 )
+def get_reals_metrics(instance_id , from_date : str ,token : str = Depends(get_current_user)): 
+    start_datetime = datetime.datetime.fromisoformat(from_date[:-1]).replace(tzinfo=datetime.timezone.utc)
+    print(start_datetime)
+    return load_all_metrics(instance_id, start_datetime )
 
-    return load_all_metrics(instance_id, start_time )
+
+@instances_routers.delete("/{instance_id}/metrics/all")
+def delete_metrics_route(instance_id : str ) : 
+    try : 
+        return delete_all_metrics_by_instance_id(instance_id)
+    except Exception as ex:    
+        print(ex)
+        exception = HTTPException(
+            status_code=500,
+            detail=f"cannot delete history"
+        )
+        return exception

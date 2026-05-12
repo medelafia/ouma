@@ -9,7 +9,7 @@ def save_user(user : User ) :
         user.password = bcrypt.hashpw(user.password.encode("utf-8") , bcrypt.gensalt())
         session.add(user) 
         session.commit()
-    
+        print("user inserted" , user.username)
         return user
 
 def get_user_by_username(username):

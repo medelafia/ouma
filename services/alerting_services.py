@@ -42,21 +42,27 @@ def get_alerts_count() :
         return { "count" :  session.exec(select(func.count()).select_from(Alert)).one() } 
 
 
-def get_overview() : 
+def get_overview(start_date) : 
     with Session(get_engine() ) as session : 
-        query = """
+        query = f"""
             WITH 
             alerts AS (
                 SELECT send_date AS date, COUNT(*) AS cnt 
-                FROM alert GROUP BY send_date
+                FROM alert 
+                WHERE send_date > {start_date}
+                GROUP BY send_date 
             ),
             incidents AS (
                 SELECT incident_date AS date, COUNT(*) AS cnt 
-                FROM incident GROUP BY incident_date
+                FROM incident 
+                WHERE incident_date > {start_date}
+                GROUP BY incident_date 
             ), 
             anomalies AS (
                 SELECT detection_date AS date, COUNT(*) AS cnt 
-                FROM anomaly GROUP BY detection_date
+                FROM anomaly 
+                WHERE detection_date > {start_date}
+                GROUP BY detection_date 
             )
             SELECT 
                 COALESCE(i.date, a.date, an.date) AS date,

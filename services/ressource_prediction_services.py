@@ -34,9 +34,6 @@ memory_model = load_pkl("memory_model")
 cpu_model = load_pkl("cpu_model")
 
 
-input_scaler = load_pkl('input_scaler')
-output_scaler = load_pkl('output_scaler')
-
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
@@ -50,7 +47,7 @@ def get_threshold(df , key , metric) :
     if key not in thresholds : 
         thresholds[key] = { "cpu" : None , "memory" : None }
     if thresholds[key][metric] is None :
-        col = "CPU usage [%]" if metric == 'cpu' else "Memory usage [%]" 
+        col = "CPU usage " if metric == 'cpu' else "Memory usage " 
         thresholds[key][metric] = df[col].mean() + 2 * df[col].std()
     
     return thresholds[key][metric]
@@ -97,7 +94,7 @@ def prepare_data_input(metrics) :
     """
 
     dataframes = { key : pd.DataFrame(data[key]) for key in data }
-    values = {}
+    #values = {}
     for key in dataframes: 
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)
@@ -112,18 +109,17 @@ def prepare_data_input(metrics) :
         dataframes[key]['day'] = dataframes[key].index.day.astype(int)
         dataframes[key]['weekday'] = dataframes[key].index.weekday.astype(int)
 
-        dataframes[key]['cpu_lag1'] = dataframes[key]['CPU usage [%]'].shift(1)
-        dataframes[key]['cpu_lag5'] = dataframes[key]['CPU usage [%]'].shift(5)
-        dataframes[key]['memory_lag1'] = dataframes[key]['Memory usage [%]'].shift(1)
-        dataframes[key]['memory_lag5'] = dataframes[key]['Memory usage [%]'].shift(5)
+        dataframes[key]['cpu_lag1'] = dataframes[key]['CPU usage '].shift(1)
+        dataframes[key]['cpu_lag5'] = dataframes[key]['CPU usage '].shift(3)
+        dataframes[key]['memory_lag1'] = dataframes[key]['Memory usage '].shift(1)
+        dataframes[key]['memory_lag5'] = dataframes[key]['Memory usage '].shift(3)
 
-        dataframes[key]['cpu_mean'] = dataframes[key]['CPU usage [%]'].rolling(5).mean()
-        dataframes[key]['cpu_std'] = dataframes[key]['CPU usage [%]'].rolling(5).std()
-        dataframes[key]['memory_mean'] = dataframes[key]['Memory usage [%]'].rolling(5).mean()
-        dataframes[key]['memory_std'] = dataframes[key]['Memory usage [%]'].rolling(5).std()
+        dataframes[key]['cpu_mean'] = dataframes[key]['CPU usage '].rolling(3).mean()
+        dataframes[key]['cpu_std'] = dataframes[key]['CPU usage '].rolling(3).std()
+        dataframes[key]['memory_mean'] = dataframes[key]['Memory usage '].rolling(3).mean()
+        dataframes[key]['memory_std'] = dataframes[key]['Memory usage '].rolling(3).std()
         ### deleteing the first 5 data records , because they will contain noisy rows 
 
-        
         dataframes[key] = dataframes[key].replace([np.inf, -np.inf], np.nan)
         dataframes[key] = dataframes[key].fillna(method='bfill')
         dataframes[key] = dataframes[key].dropna()
@@ -133,44 +129,33 @@ def prepare_data_input(metrics) :
         dataframes[key]['Disk size [GB]'] = dataframes[key]['Disk size [GB]'] 
 
         #values[i] = scaler.transform(dataframes[key])
-        values[key] = dataframes[key][['CPU cores','CPU capacity provisioned [MHZ]',	'CPU usage [%]','Memory capacity provisioned [KB]',	'Memory usage [%]','Disk size [GB]','hour','day','weekday','cpu_lag1','cpu_lag5','memory_lag1','memory_lag5','cpu_mean','cpu_std','memory_mean','memory_std']].values 
-        values[key] = input_scaler.transform(values[key])
+        #values[key] = dataframes[key][['CPU cores','CPU capacity provisioned MHZ',	'CPU usage ','Memory capacity provisioned KB',	'Memory usage ','Disk size GB','hour','day','weekday','cpu_lag1','cpu_lag5','memory_lag1','memory_lag5','cpu_mean','cpu_std','memory_mean','memory_std']].values 
+        #values[key] = input_scaler.transform(values[key])
         
         feature_columns = [
-            "cpu_lag1",
-            "cpu_lag5",
-
-            "memory_lag1",
-            "memory_lag5",
-
-            "cpu_mean",
-            "cpu_std",
-
-            "memory_mean",
-            "memory_std",
-            "CPU usage [%]", 
-            "Memory usage [%]"
-
+            'CPU cores', 'hour', 'day', 'weekday', 'cpu_lag1', 'cpu_lag5',
+            'memory_lag1', 'memory_lag5', 'cpu_mean', 'cpu_std', 'memory_mean',
+            'memory_std', 'CPU capacity provisioned MHZ', 'CPU usage ',
+            'Memory capacity provisioned KB', 'Memory usage ', 'Disk size GB'
         ]
         dataframes[key] = dataframes[key][feature_columns]
-    return dataframes , values 
-
-
+    return dataframes 
 
 
 def predict_next_and_save(metrics) : 
     global model 
-    dfs , input_values_sequence_dict = prepare_data_input(metrics)
+    dfs = prepare_data_input(metrics)
     results = {}
-    for key in input_values_sequence_dict :
+    for key in dfs :
         #input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
         #input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 10, 17)
         #predictions = model.predict(input_values_sequence_dict[key])
         #predictions = output_scaler.inverse_transform(predictions) 
         #print("INFO:predictions :" ,predictions)
+        print(dfs[key].tail(1))
         predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=1)
         #predictions = model.predict(input_values_sequence_dict[key])
-        predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].drop(["CPU usage [%]", "Memory usage [%]"] ,axis=1).tail(1))[0] , cpu_model.predict(dfs[key].drop(["CPU usage [%]", "Memory usage [%]"] ,axis=1).tail(1))[0]
+        predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
         
         print("INFO:next predicted datetime :" ,predicted_datetime)
 
@@ -214,4 +199,4 @@ def predict_next_and_save(metrics) :
     return results
 
 def is_prediction_service_ready(metrics) :
-    return len(metrics[0]['value']['data']['result'][0]['values']) >= 16
+    return len(metrics[0]['value']['data']['result'][0]['values']) >= 2

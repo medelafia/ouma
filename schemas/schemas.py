@@ -13,7 +13,6 @@ class Prediction(BaseModel ) :
     instance_id : str 
 
 
-
 class MetricsPrediction(Prediction) :
     cpu_usage : float
     memory_usage : float
@@ -39,7 +38,6 @@ class Alert(BaseModel) :
     send_date :date 
     status : str
     content: str 
-
 
 class Incident(BaseModel) :
     incident_id : str | None = Field(None )

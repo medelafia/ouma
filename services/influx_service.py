@@ -1,16 +1,17 @@
-
+from fastapi import HTTPException
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 from utils.env_factory import get_config
 from db.influx_db_connection import get_influx_connection 
 from schemas.schemas import MetricsPrediction
-
+from datetime import datetime, timezone
 
 bucket , org = get_config("INFLUX_DB_BUCKET")  , get_config("INFLUX_DB_ORG") 
 client = get_influx_connection() 
 write_api = client.write_api(write_options=SYNCHRONOUS)
 query_api = client.query_api()
 bucket_api = client.buckets_api()
+delete_api = client.delete_api()
 
 def check_bucket_and_create(bucket_name ) : 
     bucket = bucket_api.find_bucket_by_name(bucket_name)
@@ -125,3 +126,29 @@ def load_all_metrics(instance_id , start_time ) :
             results.append(result_dict)
 
     return results
+
+
+def delete_all_metrics_by_instance_id(instance_id) :
+
+    check_bucket_and_create(bucket)
+
+    print(datetime.now().replace(tzinfo=timezone.utc).isoformat())
+    delete_api.delete(
+        start="1970-01-01T00:00:00Z",
+        stop=f"{datetime.now().replace(tzinfo=timezone.utc).isoformat()}",
+        predicate=f'_measurement="real_measurement" AND instance_id="{instance_id}"', 
+        org=org,
+        bucket=bucket
+    )
+    delete_api.delete(
+        start="1970-01-01T00:00:00Z",
+        stop=f"{datetime.now().replace(tzinfo=timezone.utc).isoformat()}",
+        predicate=f'_measurement="predicted_measurement" AND instance_id="{instance_id}"', 
+        org=org,
+        bucket=bucket
+    )
+
+    return {
+        "status" : "success"
+    }
+    

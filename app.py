@@ -84,15 +84,18 @@ def get_users_me(user : dict = Depends(get_current_user)) :
 
 @app.get("/api/v1/kpis") 
 def get_kpis(token : dict = Depends(get_current_user)) :
-    return {
-        "anomalies" : get_anomalies_count() , 
-        "instances" : len(fetch_instances()) , 
-        "incidents" : get_incidents_count() , 
-        "alerts" : get_alerts_count()
-    }
+    return 
 @app.get("/api/v1/overview") 
-def get_overview_route() : 
-    return get_overview()
+def get_overview_route(from_date : str) : 
+    return  { 
+                "statistics" : get_overview(datetime.datetime.fromisoformat(from_date[:-1]).replace(tzinfo=datetime.timezone.utc).date()) ,
+                "kpis" : {
+                    "anomalies" : get_anomalies_count() , 
+                    "instances" : len(fetch_instances()) , 
+                    "incidents" : get_incidents_count() , 
+                    "alerts" : get_alerts_count()
+                }
+            }
 
 
 app.add_middleware(
