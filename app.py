@@ -44,7 +44,7 @@ def prediction_job() :
     print("doing job...")
     data = {}
     for metric in metrics : 
-        if metric['name'] == "CPU usage [%]" or metric['name'] == "Memory usage [%]" : 
+        if metric['name'] == "CPU usage " or metric['name'] == "Memory usage " : 
             for res in metric['value']['data']['result'] : 
                 instance = get_instance_by_host_and_port(res['metric']['instance'].split(":")[0] ,res['metric']['instance'].split(":")[1] )
                 instance_id = instance.instance_id
@@ -53,7 +53,6 @@ def prediction_job() :
                     data[instance_id].update({metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp})
                 else: 
                     data[instance_id] = {metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp}
-    
     for instance_id in data : 
         print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
   

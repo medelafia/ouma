@@ -1,6 +1,6 @@
 import requests 
 import time 
-from services.metadata_services import get_metadata
+from services.metadata_services import get_metadata , load_metadata
 from schemas.schemas import Instance
 
 ## DEFINNING SOME GLOBAL VARIABLES 
@@ -15,6 +15,7 @@ queries = [
     { "name" : "Disk size GB" , "query" : 'sum by (instance, device) (node_filesystem_size_bytes{mountpoint="/"} / 1024 / 1024 / 1024)'} , 
     { "name" : "Network received throughput KB/s" , "query" : 'rate(node_network_receive_bytes_total[5m]) / 1024'}
 ]
+loading_interval = load_metadata().PREDICTION_INTERVAL
 
 def execute_query(path , query=None , is_range = False ) : 
     """
@@ -25,10 +26,10 @@ def execute_query(path , query=None , is_range = False ) :
     """
     try : 
         end = int(time.time())
-        start = end - 4 * 60 * 60 
+        start = end - 5 * 6 * 60 
 
         if query is not None and is_range : 
-            response = requests.get(path,params= { "query" : query, "step":300, "start" : start ,"end" : end }) 
+            response = requests.get(path,params= { "query" : query, "step":loading_interval * 60, "start" : start ,"end" : end }) 
         elif query is not None : 
             response = requests.get(path, params={"query":query})
         else : 

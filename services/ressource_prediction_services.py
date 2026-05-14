@@ -12,6 +12,7 @@ from utils.instance_factory import get_instance_by_host_and_port
 from services.alerting_services import send_alert
 from services.anomaly_service import create_and_save_anomaly ,  save_anomaly
 import datetime
+from services.metadata_services import load_metadata
 anomalies = { 
     "memory" :  {
         "count" : 0 ,  
@@ -32,7 +33,7 @@ def load_pkl(name) :
 
 memory_model = load_pkl("memory_model")
 cpu_model = load_pkl("cpu_model")
-
+prediction_interval = load_metadata().PREDICTION_INTERVAL
 
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
@@ -103,7 +104,7 @@ def prepare_data_input(metrics) :
         for col in dataframes[key].columns : 
             dataframes[key][col] = pd.to_numeric(dataframes[key][col] , errors='coerce')
  
-        dataframes[key]['CPU capacity provisioned [MHZ]']= 2400 * dataframes[key]['CPU cores']
+        dataframes[key]['CPU capacity provisioned MHZ']= 2400 * dataframes[key]['CPU cores']
 
         dataframes[key]['hour'] = dataframes[key].index.hour.astype(int)
         dataframes[key]['day'] = dataframes[key].index.day.astype(int)
@@ -125,8 +126,10 @@ def prepare_data_input(metrics) :
         dataframes[key] = dataframes[key].dropna()
 
 
+
         dataframes[key] = dataframes[key].tail(10)
-        dataframes[key]['Disk size [GB]'] = dataframes[key]['Disk size [GB]'] 
+
+        print(dataframes[key].tail())
 
         #values[i] = scaler.transform(dataframes[key])
         #values[key] = dataframes[key][['CPU cores','CPU capacity provisioned MHZ',	'CPU usage ','Memory capacity provisioned KB',	'Memory usage ','Disk size GB','hour','day','weekday','cpu_lag1','cpu_lag5','memory_lag1','memory_lag5','cpu_mean','cpu_std','memory_mean','memory_std']].values 
@@ -138,7 +141,9 @@ def prepare_data_input(metrics) :
             'memory_std', 'CPU capacity provisioned MHZ', 'CPU usage ',
             'Memory capacity provisioned KB', 'Memory usage ', 'Disk size GB'
         ]
+        dataframes[key][feature_columns].tail(1).to_csv(f'others/{key}.csv', mode='a', index=True, header=False)
         dataframes[key] = dataframes[key][feature_columns]
+        
     return dataframes 
 
 
@@ -147,14 +152,8 @@ def predict_next_and_save(metrics) :
     dfs = prepare_data_input(metrics)
     results = {}
     for key in dfs :
-        #input_values_sequence_dict[key] = np.array(input_values_sequence_dict[key], dtype=np.float32)
-        #input_values_sequence_dict[key] = input_values_sequence_dict[key].reshape(1, 10, 17)
-        #predictions = model.predict(input_values_sequence_dict[key])
-        #predictions = output_scaler.inverse_transform(predictions) 
-        #print("INFO:predictions :" ,predictions)
         print(dfs[key].tail(1))
-        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=1)
-        #predictions = model.predict(input_values_sequence_dict[key])
+        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
         predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
         
         print("INFO:next predicted datetime :" ,predicted_datetime)
