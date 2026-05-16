@@ -7,7 +7,7 @@ from auth.auth import get_current_user
 metadata_router = APIRouter(prefix="/api/v1/metadata") 
 
 @metadata_router.post("/update")
-def update_metadata_route(metadata : Metadata) : 
+def update_metadata_route(metadata : Metadata , token : str = Depends(get_current_user)) : 
     return update_metadata(metadata)
 
 @metadata_router.get("/")

@@ -64,7 +64,7 @@ def get_reals_metrics(instance_id , from_date : str ,token : str = Depends(get_c
 
 
 @instances_routers.delete("/{instance_id}/metrics/all")
-def delete_metrics_route(instance_id : str ) : 
+def delete_metrics_route(instance_id : str , token : str = Depends(get_current_user) ) : 
     try : 
         return delete_all_metrics_by_instance_id(instance_id)
     except Exception as ex:    
