@@ -6,6 +6,7 @@ from sqlmodel import Session , select , func , text
 from services.email_services import load_emails
 from schemas.schemas import Page , PageMetadata
 from math import ceil
+from services.email_services import notify_admins_by_emails
 
 create_db_and_tables()
 
@@ -18,8 +19,20 @@ def send_alert(content , severity , anomaly_id) :
         alert = Alert(alert_id=uuid ,send_date=send_date , send_time=send_time  , status="UNSEEN" ,content=content , severity=severity , anomaly_id=anomaly_id)
         session.add(alert)
         session.commit()
-        emails = load_emails()
-        print(emails)
+        email_content = f"""
+            🚨 ALERT NOTIFICATION
+
+            Details:
+            • Message: {alert.content}
+
+            • Occurrence Time: {str(alert.send_date) + " " + str(alert.send_time)}
+
+            • Related Anomaly ID: {alert.anomaly_id}
+
+            Please review this alert as soon as possible and take the necessary action.
+        """
+        notify_admins_by_emails('System Alert!', email_content)
+        
 
 
 

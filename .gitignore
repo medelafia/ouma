@@ -1,6 +1,9 @@
 others/
 .env
+.env.*
 
 __pycache__/
 */__pycache__
 .virtualenv/
+volumes/
+ouma-ui/

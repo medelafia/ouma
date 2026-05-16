@@ -124,17 +124,8 @@ def prepare_data_input(metrics) :
         dataframes[key] = dataframes[key].replace([np.inf, -np.inf], np.nan)
         dataframes[key] = dataframes[key].fillna(method='bfill')
         dataframes[key] = dataframes[key].dropna()
-
-
-
-        dataframes[key] = dataframes[key].tail(10)
-
-        print(dataframes[key].tail())
-
-        #values[i] = scaler.transform(dataframes[key])
-        #values[key] = dataframes[key][['CPU cores','CPU capacity provisioned MHZ',	'CPU usage ','Memory capacity provisioned KB',	'Memory usage ','Disk size GB','hour','day','weekday','cpu_lag1','cpu_lag5','memory_lag1','memory_lag5','cpu_mean','cpu_std','memory_mean','memory_std']].values 
-        #values[key] = input_scaler.transform(values[key])
         
+        dataframes[key] = dataframes[key].tail(10) 
         feature_columns = [
             'CPU cores', 'hour', 'day', 'weekday', 'cpu_lag1', 'cpu_lag5',
             'memory_lag1', 'memory_lag5', 'cpu_mean', 'cpu_std', 'memory_mean',

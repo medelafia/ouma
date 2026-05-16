@@ -72,7 +72,7 @@ def notify_admins_by_emails(subject , body ) :
             smtp.login(system_email , system_email_password)
             smtp.sendmail(system_email, receipients , msg.as_string())
 
-    except : 
-        pass
+    except Exception as ex: 
+        print(ex)
 
 create_emails_table()
