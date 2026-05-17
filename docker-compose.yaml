@@ -23,7 +23,8 @@ services:
       - "9090:9090"
     volumes:
       - ./volumes/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-
+    networks: 
+      - microservice-net
   influx-service:
     image: influxdb:2
     ports:
@@ -46,6 +47,8 @@ services:
       - type: volume
         source: influxdb2-config
         target: /etc/influxdb2
+    networks: 
+      - microservice-net
   mysql-service: 
     image: mysql/mysql-server:8.0
     container_name: mysql-container
@@ -53,7 +56,8 @@ services:
       - "3306:3306" 
     env_file: 
       - ".env.mysql"
-  
+    networks: 
+      - microservice-net
   ouma-backend-service: 
     build: . 
     container_name: ouma-backend
@@ -61,18 +65,19 @@ services:
       - "8000:8000" 
     env_file:
       - ".env"
-    depends: 
+    depends_on: 
       - mysql-service
       - influx-service
       - prometheus
-  
-
-
+    networks: 
+      - microservice-net
   ouma-ui-service: 
     build: ouma-ui/. 
-    container_name: ouma-backend
+    container_name: ouma-ui
     ports: 
       - "3000:3000" 
-    depends: 
+    depends_on: 
       - ouma-backend-service
+    networks: 
+      - microservice-net 
 

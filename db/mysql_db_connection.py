@@ -6,7 +6,7 @@ MYSQL_PASSWORD = get_config("MYSQL_PASSWORD")
 MYSQL_DB = get_config("MYSQL_DB")
 MYSQL_HOST = get_config("MYSQL_HOST")
 
-mysql_url = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}?charset=utf8mb4"
+mysql_url = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DB}?charset=utf8mb4"
 
 connect_args = {"check_same_thread": False}
 engine = None
