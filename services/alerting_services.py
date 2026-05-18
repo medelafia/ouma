@@ -8,7 +8,6 @@ from schemas.schemas import Page , PageMetadata
 from math import ceil
 from services.email_services import notify_admins_by_emails
 
-create_db_and_tables()
 
 def send_alert(content , severity , anomaly_id) : 
     send_date = datetime.now().date() 

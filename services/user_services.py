@@ -20,6 +20,21 @@ def check_user_password(user_password , password) :
     with Session(get_engine()) as session : 
         return bcrypt.checkpw(password.encode("utf-8") , user_password.encode("utf-8"))
 
+def create_admin_user():
+    with Session(get_engine()) as session:
+        # Check if admin already exists
+        result = session.exec(select(User).where(User.username == "admin"))
+        if result.one_or_none():
+            print("Admin user already exists")
+            return
 
-save_user(User(username="admin" , password="admin"))
+        # Create admin
+        admin = User(
+            username="admin",
+            password=bcrypt.hashpw("admin".encode("utf-8") , bcrypt.gensalt()) 
+        )
+        session.add(admin)
+        session.commit()
+        print("Admin user created")
+
 

@@ -7,3 +7,4 @@ __pycache__/
 .virtualenv/
 volumes/
 ouma-ui/
+db/*.db

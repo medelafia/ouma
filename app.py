@@ -16,7 +16,7 @@ from services.prometheus_service import fetch_metrics
 from routers.alert_router import alerts_router
 from routers.anomaly_router import anomaly_router
 from fastapi.security import OAuth2PasswordRequestForm
-from services.user_services import get_user_by_username
+from services.user_services import get_user_by_username , create_admin_user
 from auth.auth import create_access_token , check_user_password , get_current_user
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -25,10 +25,14 @@ from routers.metadata_router import metadata_router
 from utils.instance_factory import get_instance_by_host_and_port
 from services.influx_service import save_actual_records  , save_prediction
 import datetime
-from schemas.schemas import MetricsPrediction
+from db.mysql_db_connection import create_db_and_tables , get_engine
+
+
+
 @asynccontextmanager
 async def lifespan(app : FastAPI) :
-
+    await create_db_and_tables()
+    create_admin_user()
     print("Startup")
     yield
     print("shuting down")

@@ -12,7 +12,7 @@ queries = [
     { "name"  : "Memory usage " , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
     { "name": "Disk read throughput KB/s" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
     { "name": "Disk write throughput KB/s" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
-    { "name" : "Disk size GB" , "query" : 'sum by (instance, device) (node_filesystem_size_bytes{mountpoint="/"} / 1024 / 1024 / 1024)'} , 
+    { "name" : "Disk size GB" , "query" : 'sum by (instance, device) (node_filesystem_size_bytes{mountpoint="/data"} / 1024 / 1024 / 1024)'} , 
     { "name" : "Network received throughput KB/s" , "query" : 'rate(node_network_receive_bytes_total[5m]) / 1024'}
 ]
 loading_interval = load_metadata().PREDICTION_INTERVAL
@@ -60,7 +60,7 @@ def fetch_instance_metrics(instance_host) :
 
 def fetch_instances() : 
     json_response = execute_query(PROMETHEUS_URL + "/targets")
-    services = [service for service in json_response['data']['activeTargets']] 
+    services = [service for service in json_response['data']['activeTargets'] if service['labels']['job'] == "node-exporter"] 
     return services
 
 def fetch_instance_ressources(instance : Instance ) :

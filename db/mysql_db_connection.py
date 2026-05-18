@@ -12,7 +12,7 @@ connect_args = {"check_same_thread": False}
 engine = None
 
 
-def create_db_and_tables():
+async def create_db_and_tables():
     SQLModel.metadata.create_all(get_engine() )
 
 
