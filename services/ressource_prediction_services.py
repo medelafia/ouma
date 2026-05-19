@@ -1,6 +1,4 @@
-from services.prometheus_service import fetch_metrics , fetch_instances
 import pandas as pd 
-import tensorflow as tf
 import pickle 
 from services.influx_service import save_prediction 
 from schemas.schemas import MetricsPrediction
@@ -13,6 +11,7 @@ from services.alerting_services import send_alert
 from services.anomaly_service import create_and_save_anomaly ,  save_anomaly
 import datetime
 from services.metadata_services import load_metadata
+
 anomalies = { 
     "memory" :  {
         "count" : 0 ,  
@@ -69,7 +68,6 @@ def prepare_data_input(metrics) :
         if metric['value']['status'] == 'success' : 
             for i in range(len(metric['value']['data']['result'])) :
                 metrics_result = metric['value']['data']['result'][i]
-                #instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1]))
                 instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1])).instance_id
                 if instance_id not in data :
                     data[instance_id] = []
@@ -95,7 +93,6 @@ def prepare_data_input(metrics) :
     """
 
     dataframes = { key : pd.DataFrame(data[key]) for key in data }
-    #values = {}
     for key in dataframes: 
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)

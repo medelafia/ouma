@@ -23,9 +23,9 @@ from contextlib import asynccontextmanager
 from services.metadata_services import get_metadata
 from routers.metadata_router import metadata_router
 from utils.instance_factory import get_instance_by_host_and_port
-from services.influx_service import save_actual_records  , save_prediction
+from services.influx_service import save_actual_records 
 import datetime
-from db.mysql_db_connection import create_db_and_tables , get_engine
+from db.mysql_db_connection import create_db_and_tables 
 
 
 
@@ -64,7 +64,7 @@ def prediction_job() :
         predict_next_and_save(metrics)
 
     else : 
-        print("INFO:Prediction services not ready to predict next values, cause the prediction requires past 24 values")
+        print("INFO:Prediction engine not ready to predict next values, cause the prediction engine requires past 24 values")
 
 try :
     sched.start()
