@@ -54,14 +54,8 @@ def get_threshold(df , key , metric) :
     return thresholds[key][metric]
 
 
-def prepare_data_input(metrics) : 
-    """
-        func_name : prepare_data_input
-        description : Load data from prometheus , create record for making ML model prediction ,
-        scale data using the scaler used in the training process , create new features such as lag1 , cpu_std ...  
-        args : None 
-        return : a list of dataframes ready to be an input of model to predict next values
-    """
+
+def structurize(metrics) :
     data = { }
     
     ## loop through the metrics and append each metric to predefined dictionnary 
@@ -72,7 +66,6 @@ def prepare_data_input(metrics) :
                 instance_id = get_instance_by_host_and_port(metrics_result['metric']['instance'].split(':')[0] , int(metrics_result['metric']['instance'].split(':')[1])).instance_id
                 if instance_id not in data :
                     data[instance_id] = []
-                
                 
                 for value in metrics_result['values']  : 
                     metric_name = metric['name'] 
@@ -86,14 +79,18 @@ def prepare_data_input(metrics) :
                             if timestamp == data[instance_id][j]['timestamp'] :  
                                 data[instance_id][j][metric_name] = metric_value
     
+    return { key : pd.DataFrame(data[key]) for key in data } 
 
+
+def prepare_data_input_xgboost(dataframes) : 
     """
-    here i tried to create dataframes based on dict created after the previous part ,
-    and in the same time i tried to preprocess the data following the same stepss in
-    the model training process, and adding some additionnal features such as cpu_lag5...
+        func_name : prepare_data_input
+        description : Load data from prometheus , create record for making ML model prediction ,
+        scale data using the scaler used in the training process , create new features such as lag1 , cpu_std ...  
+        args : None 
+        return : a list of dataframes ready to be an input of model to predict next values
     """
 
-    dataframes = { key : pd.DataFrame(data[key]) for key in data }
     for key in dataframes: 
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)
@@ -136,11 +133,12 @@ def prepare_data_input(metrics) :
     return dataframes 
 
 
-def predict_next_and_save(metrics) : 
+def predict_next_and_save_by_xgboost(structured_data) : 
     global model 
-    dfs = prepare_data_input(metrics)
+    dfs = prepare_data_input_xgboost(structured_data)
     results = {}
     for key in dfs :
+
         print(dfs[key].tail(1))
         predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
         predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
@@ -186,5 +184,10 @@ def predict_next_and_save(metrics) :
         results[key] = [[predicted_cpu , predicted_memory]]
     return results
 
-def is_prediction_service_ready(metrics) :
-    return len(metrics[0]['value']['data']['result'][0]['values']) >= 5
+def is_xgboost_prediction_engine_ready(metrics: dict[str, pd.DataFrame]) -> bool:
+    return bool(metrics) and all(df.shape[0] >= 5 for df in metrics.values())
+
+
+
+def is_dl_prediction_engine_ready(metrics: dict[str, pd.DataFrame]) -> bool :  
+    return bool(metrics) and all(df.shape[0] >= 47 for df in metrics.values())

@@ -7,7 +7,7 @@ from fastapi import FastAPI , Depends ,HTTPException , Response
 from routers.instances_router import instances_routers
 from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
-from services.ressource_prediction_services import predict_next_and_save , is_prediction_service_ready 
+from services.ressource_prediction_services import predict_next_and_save_by_xgboost , is_xgboost_prediction_engine_ready  , structurize
 from services.alerting_services import get_alerts_count , get_overview
 from services.anomaly_service import get_anomalies_count
 from services.incident_services import get_incidents_count 
@@ -60,8 +60,11 @@ def prediction_job() :
     for instance_id in data : 
         print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
   
-    if is_prediction_service_ready(metrics) :
-        predict_next_and_save(metrics)
+
+    structured_data = structurize(metrics)
+    if is_xgboost_prediction_engine_ready(structured_data) :
+
+        predict_next_and_save_by_xgboost(structured_data)
 
     else : 
         print("INFO:Prediction engine not ready to predict next values, cause the prediction engine requires past 24 values")
