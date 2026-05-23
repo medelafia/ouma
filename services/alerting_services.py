@@ -7,7 +7,8 @@ from services.email_services import load_emails
 from schemas.schemas import Page , PageMetadata
 from math import ceil
 from services.email_services import notify_admins_by_emails
-
+from services.metadata_services import get_metadata
+from services.slack_services import send_slack_message
 
 def send_alert(content , severity , anomaly_id) : 
     send_date = datetime.now().date() 
@@ -18,7 +19,7 @@ def send_alert(content , severity , anomaly_id) :
         alert = Alert(alert_id=uuid ,send_date=send_date , send_time=send_time  , status="UNSEEN" ,content=content , severity=severity , anomaly_id=anomaly_id)
         session.add(alert)
         session.commit()
-        email_content = f"""
+        message = f"""
             🚨 ALERT NOTIFICATION
 
             Details:
@@ -30,7 +31,13 @@ def send_alert(content , severity , anomaly_id) :
 
             Please review this alert as soon as possible and take the necessary action.
         """
-        notify_admins_by_emails('System Alert!', email_content)
+        if get_metadata().ACTIVATE_EMAIL_ALERTING :
+            notify_admins_by_emails('System Alert!', message)
+        
+
+        if get_metadata().ACTIVATE_EMAIL_ALERTING :
+            send_slack_message(message)
+
         
 
 

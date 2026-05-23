@@ -76,7 +76,7 @@ def load_metadata() :
     global metadata
     if metadata is None :
         metadata = Metadata()
-        for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' , 'TARGET_SERVER_PORT' ] : 
+        for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_EMAIL_ALERTING', 'ACTIVATE_SLACK_ALERTING', 'TARGET_SERVER_PORT' ] : 
             founded_value = get_metadata_from_db(i)
 
             if founded_value is None : 

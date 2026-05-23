@@ -15,12 +15,16 @@ variables = {
     "SECRET_KEY": None , 
     "TARGET_SERVER_HOST" : None , 
     "PREDICTION_INTERVAL" : None , 
-    "ACTIVATE_ALERTING" : None  , 
+    "ACTIVATE_EMAIL_ALERTING" : None  , 
+    "ACTIVATE_SLACK_ALERTING": None , 
     "TARGET_SERVER_PORT" : None , 
     "SYSTEM_EMAIL" : None ,  
     "SMTP_SERVER" : None , 
     "SMTP_PORT" : None , 
-    "SYSTEM_EMAIL_PASSWORD" : None 
+    "SYSTEM_EMAIL_PASSWORD" : None  , 
+    "SLACK_TOKEN" : None , 
+    "SLACK_CHANNEL" : None ,
+    "SLACK_USER" : None 
 } 
 
 def get_config(variable_key) : 
