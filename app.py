@@ -7,7 +7,7 @@ from fastapi import FastAPI , Depends ,HTTPException , Response
 from routers.instances_router import instances_routers
 from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
-from services.ressource_prediction_services import predict_next_and_save_by_xgboost , is_xgboost_prediction_engine_ready  , structurize
+from services.ressource_prediction_services import predict_next_and_save_by_xgboost , is_xgboost_prediction_engine_ready  , structurize, is_cnn_lstm_prediction_engine_ready , predict_next_and_save_by_cnn_lstm
 from services.alerting_services import get_alerts_count , get_overview
 from services.anomaly_service import get_anomalies_count
 from services.incident_services import get_incidents_count 
@@ -63,11 +63,14 @@ def prediction_job() :
 
     structured_data = structurize(metrics)
     if is_xgboost_prediction_engine_ready(structured_data) :
-
         predict_next_and_save_by_xgboost(structured_data)
-
     else : 
-        print("INFO:Prediction engine not ready to predict next values, cause the prediction engine requires past 24 values")
+        print("INFO: Xgboost Prediction engine not ready to predict next values, cause the prediction engine requires past 5 values")
+
+    if is_cnn_lstm_prediction_engine_ready(structured_data) : 
+        predict_next_and_save_by_cnn_lstm("")
+    else : 
+        print("INFO: Cnn+BILstm Prediction engine not ready to predict next values, cause the prediction engine requires past 40 values")
 
 try :
     sched.start()
