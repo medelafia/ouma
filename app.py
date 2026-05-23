@@ -3,7 +3,7 @@
 ####    App Name : Ouma                               
 ###############################################################################
 
-from fastapi import FastAPI , Depends ,HTTPException
+from fastapi import FastAPI , Depends ,HTTPException , Response
 from routers.instances_router import instances_routers
 from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -73,12 +73,22 @@ except :
 
 
 @app.post("/api/v1/auth/token")
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(response : Response , form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user_by_username(form_data.username)
-    if user is None or not check_user_password(user.password , form_data.password):
+    if user is None or not check_user_password( form_data.password , user.password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False, # HTTPS only
+        samesite="lax",
+        max_age=1800
+    )
+    return {"status" : "success"}
+
 
 
 @app.get("/api/v1/users/me")
@@ -99,7 +109,6 @@ def get_overview_route(from_date : str) :
                     "alerts" : get_alerts_count()
                 }
             }
-
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 

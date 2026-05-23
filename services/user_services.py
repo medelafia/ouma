@@ -17,8 +17,7 @@ def get_user_by_username(username):
         return session.exec(select(User).where(User.username == username)).first()
         
 def check_user_password(user_password , password) : 
-    with Session(get_engine()) as session : 
-        return bcrypt.checkpw(password.encode("utf-8") , user_password.encode("utf-8"))
+    return bcrypt.checkpw(user_password.encode("utf-8") , password.encode("utf-8"))
 
 def create_admin_user():
     with Session(get_engine()) as session:

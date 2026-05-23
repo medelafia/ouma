@@ -4,6 +4,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from utils.env_factory import get_config
+import ssl
+
+context = ssl.create_default_context()
 
 def create_emails_table() : 
     with get_connection("db/emails.db") as con :
@@ -28,7 +31,6 @@ def add_new_email(email) :
         finally : 
             cursor.close()
 
-
 def load_emails() : 
     with get_connection("db/emails.db") as con : 
         try : 
@@ -40,7 +42,6 @@ def load_emails() :
         finally : 
             cursor.close() 
         
-
 def delete_email(email) :
     with get_connection("db/emails.db") as con : 
         try : 
@@ -53,10 +54,8 @@ def delete_email(email) :
             cursor.close()
 
 
-
-
-
 def notify_admins_by_emails(subject , body ) : 
+
     system_email = get_config("SYSTEM_EMAIL")
     smtp_server = get_config("SMTP_SERVER") 
     smtp_port = int(get_config("SMTP_PORT"))
@@ -69,6 +68,7 @@ def notify_admins_by_emails(subject , body ) :
         msg['To'] = ', '.join(receipients)
         msg.attach(MIMEText(body, 'plain'))
         with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+            smtp.starttls(context=context)
             smtp.login(system_email , system_email_password)
             smtp.sendmail(system_email, receipients , msg.as_string())
 

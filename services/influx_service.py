@@ -79,53 +79,56 @@ def load_metrics(instance_id , start_time , measurment ) :
 
 def load_all_metrics(instance_id , start_time ) : 
     check_bucket_and_create(bucket)
-    query = f'''
-        import "join"
+    try : 
+        query = f'''
+            import "join"
 
-        reals = from(bucket : "{bucket}")
-        |> range(start : time(v: "{start_time.isoformat()}")) 
-        |> filter(fn: (r) => r._measurement == "real_measurement" )
-        |> filter(fn: (r) => r.instance_id == "{instance_id}") 
-        |> keep(columns: ["_time", "_field", "_value", "instance_id"])
-        |> pivot(rowKey:["_time","instance_id"], columnKey: ["_field"], valueColumn: "_value")
-        
+            reals = from(bucket : "{bucket}")
+            |> range(start : time(v: "{start_time.isoformat()}")) 
+            |> filter(fn: (r) => r._measurement == "real_measurement" )
+            |> filter(fn: (r) => r.instance_id == "{instance_id}") 
+            |> keep(columns: ["_time", "_field", "_value", "instance_id"])
+            |> pivot(rowKey:["_time","instance_id"], columnKey: ["_field"], valueColumn: "_value")
+            
 
-        predictions = from(bucket : "{bucket}")
-        |> range(start : time(v: "{start_time.isoformat()}")) 
-        |> filter(fn: (r) => r._measurement == "predicted_measurement") 
-        |> filter(fn: (r) => r.instance_id == "{instance_id}") 
-        |> keep(columns: ["_time", "_field", "_value", "instance_id"])
-        |> pivot(rowKey:["_time","instance_id"], columnKey: ["_field"], valueColumn: "_value")
+            predictions = from(bucket : "{bucket}")
+            |> range(start : time(v: "{start_time.isoformat()}")) 
+            |> filter(fn: (r) => r._measurement == "predicted_measurement") 
+            |> filter(fn: (r) => r.instance_id == "{instance_id}") 
+            |> keep(columns: ["_time", "_field", "_value", "instance_id"])
+            |> pivot(rowKey:["_time","instance_id"], columnKey: ["_field"], valueColumn: "_value")
 
-        join.inner(
-            left: reals, 
-            right: predictions, 
-            on: (l, r) => l._time == r._time and l.instance_id == r.instance_id,
-            as: (l, r) => ({{
-                time: l._time,
-                instance_id: l.instance_id,
-                cpu_usage_actual: l.cpu_usage_actual,
-                memory_usage_actual: l.memory_usage_actual,
-                cpu_usage_pred: r.cpu_usage_pred,
-                memory_usage_pred: r.memory_usage_pred
-            }})
-        )
-        '''
-    result = query_api.query(org=org, query=query)
-    results = []
+            join.inner(
+                left: reals, 
+                right: predictions, 
+                on: (l, r) => l._time == r._time and l.instance_id == r.instance_id,
+                as: (l, r) => ({{
+                    time: l._time,
+                    instance_id: l.instance_id,
+                    cpu_usage_actual: l.cpu_usage_actual,
+                    memory_usage_actual: l.memory_usage_actual,
+                    cpu_usage_pred: r.cpu_usage_pred,
+                    memory_usage_pred: r.memory_usage_pred
+                }})
+            )
+            '''
+        result = query_api.query(org=org, query=query)
+        results = []
 
-    for table in result:
-        for record in table.records:
-            result_dict = {
-                "time": record.values.get("time"),
-                "cpu_usage_actual": record.values.get("cpu_usage_actual"),
-                "memory_usage_actual": record.values.get("memory_usage_actual"),  
-                "cpu_usage_pred" : record.values.get("cpu_usage_pred"), 
-                "memory_usage_pred": record.values.get("memory_usage_pred"),  
-            }
-            results.append(result_dict)
+        for table in result:
+            for record in table.records:
+                result_dict = {
+                    "time": record.values.get("time"),
+                    "cpu_usage_actual": record.values.get("cpu_usage_actual"),
+                    "memory_usage_actual": record.values.get("memory_usage_actual"),  
+                    "cpu_usage_pred" : record.values.get("cpu_usage_pred"), 
+                    "memory_usage_pred": record.values.get("memory_usage_pred"),  
+                }
+                results.append(result_dict)
 
-    return results
+        return results
+    except Exception as ex :
+        return []
 
 
 def delete_all_metrics_by_instance_id(instance_id) :

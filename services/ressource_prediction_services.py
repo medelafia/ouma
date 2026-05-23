@@ -11,6 +11,7 @@ from services.alerting_services import send_alert
 from services.anomaly_service import create_and_save_anomaly ,  save_anomaly
 import datetime
 from services.metadata_services import load_metadata
+from utils.env_factory import get_config
 
 anomalies = { 
     "memory" :  {
@@ -154,7 +155,7 @@ def predict_next_and_save(metrics) :
             if anomalies['cpu']['count'] == 0 : 
                 anomaly = create_and_save_anomaly(key)
                 anomalies['cpu']['anomaly'] = anomaly
-                send_alert("High cpu usage after 5 min" ,"LOW" , anomaly.anomaly_id)
+                send_alert("High cpu usage after" ,get_config("PREDICTION_INTERVAL"), " min" ,"LOW" , anomaly.anomaly_id)
             elif anomalies['cpu']['count'] <= 2 : 
                 send_alert(f"CPU still high (x{anomalies['cpu']['count']})" ,"MEDIUM" ,anomalies['cpu']['anomaly'].anomaly_id)
             else :

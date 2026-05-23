@@ -89,7 +89,7 @@ def load_metadata() :
 
 def update_metadata( request_metadata : Metadata ) : 
     global metadata
-    for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_ALERTING' , 'TARGET_SERVER_PORT' ] : 
+    for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_EMAIL_ALERTING', 'ACTIVATE_SLACK_ALERTING', 'TARGET_SERVER_PORT' ] : 
         print(request_metadata.model_dump()[i]) 
         set_metadata(i , request_metadata.model_dump()[i])
         setattr(metadata , i, request_metadata.model_dump()[i])

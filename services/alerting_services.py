@@ -35,7 +35,7 @@ def send_alert(content , severity , anomaly_id) :
             notify_admins_by_emails('System Alert!', message)
         
 
-        if get_metadata().ACTIVATE_EMAIL_ALERTING :
+        if get_metadata().ACTIVATE_SLACK_ALERTING :
             send_slack_message(message)
 
         
