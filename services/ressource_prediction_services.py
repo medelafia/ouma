@@ -183,19 +183,19 @@ def predict_next_and_save_by_cnn_lstm(structured_data) :
     dfs , values = prepare_data_input_cnn_lstm(structured_data)
     print(values)
     for key in dfs :
+        try : 
+            predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
+            predictions = cnn_lstm_model.predict(values[key])[0]
+            
+            print("Beta Model prediction :", output_scaler.inverse_transform(predictions))
 
-        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
-        #predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
-        predictions = cnn_lstm_model.predict(values[key])
-        
-        #print("INFO:next predicted datetime :" ,predicted_datetime)
-        print("Beta Model prediction :", output_scaler.inverse_transform(predictions))
-
-        #threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
-        #threshold_memory = get_threshold(dfs[key] , key , 'memory')
-        #metricsPrediction = MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory)
-        
-        #handle_prediction(metricsPrediction , threshold_cpu , threshold_memory)
+            #threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
+            #threshold_memory = get_threshold(dfs[key] , key , 'memory')
+            #metricsPrediction = MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory)
+            
+            #handle_prediction(metricsPrediction , threshold_cpu , threshold_memory)
+        except Exception as ex:
+            print("ERROR :" , ex)
 
 def predict_next_and_save_by_xgboost(structured_data) : 
     dfs = prepare_data_input_xgboost(structured_data)
@@ -223,7 +223,7 @@ def handle_prediction(metricsPrediction : MetricsPrediction , threshold_cpu ,thr
         if anomalies['cpu']['count'] == 0 : 
             anomaly = create_and_save_anomaly(metricsPrediction.instance_id)
             anomalies['cpu']['anomaly'] = anomaly
-            send_alert("High cpu usage after" ,get_config("PREDICTION_INTERVAL"), " min" ,"LOW" , anomaly.anomaly_id)
+            send_alert(f"High cpu usage after {get_config('PREDICTION_INTERVAL')} min" ,"LOW" , anomaly.anomaly_id)
         elif anomalies['cpu']['count'] <= 2 : 
             send_alert(f"CPU still high (x{anomalies['cpu']['count']})" ,"MEDIUM" ,anomalies['cpu']['anomaly'].anomaly_id)
         else :
@@ -241,7 +241,7 @@ def handle_prediction(metricsPrediction : MetricsPrediction , threshold_cpu ,thr
         if anomalies['memory']['count'] == 0 : 
             anomaly = create_and_save_anomaly(metricsPrediction.instance_id)
             anomalies['memory']['anomaly'] = anomaly
-            send_alert("High memory usage after 5 min" ,"LOW" , anomaly.anomaly_id)
+            send_alert(f"High memory usage after {get_config('PREDICTION_INTERVAL')} min" ,"LOW" , anomaly.anomaly_id)
         elif anomalies['memory']['count'] <= 2 : 
             send_alert(f"MEMORY still high (x{anomalies['memory']['count']})" ,"MEDIUM", anomalies['memory']['anomaly'].anomaly_id)
         else :

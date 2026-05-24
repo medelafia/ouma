@@ -9,6 +9,7 @@ from math import ceil
 from services.email_services import notify_admins_by_emails
 from services.metadata_services import get_metadata
 from services.slack_services import send_slack_message
+from fastapi import HTTPException
 
 def send_alert(content , severity , anomaly_id) : 
     send_date = datetime.now().date() 
@@ -54,7 +55,16 @@ def get_alert_by_anomaly(anomaly_id):
     with Session(get_engine()) as session :
         return session.exec(select(Alert).where(Alert.anomaly_id == anomaly_id)).all()    
 
-
+def get_alert_by_id(id : str) -> Alert: 
+    with Session(get_engine()) as session :
+        try : 
+            return session.exec(select(Alert).where(Alert.alert_id == id)).one()   
+        except Exception as ex: 
+            exception = HTTPException(
+                status_code=404,
+                detail= "Alert not found"
+            )
+            raise exception
 
 def get_alerts_count() : 
     with Session(get_engine()) as session : 

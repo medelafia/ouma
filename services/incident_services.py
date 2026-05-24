@@ -35,7 +35,7 @@ def delete_incident_by_id(id : str) :
             return {"status" : "success"}
         except Exception  : 
             exception = HTTPException(
-                status_code=401,
+                status_code=404,
                 detail= "Incident not found"
             )
             raise exception
