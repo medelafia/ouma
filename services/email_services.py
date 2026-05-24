@@ -5,6 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from utils.env_factory import get_config
 import ssl
+from fastapi import HTTPException
 
 context = ssl.create_default_context()
 
@@ -27,7 +28,11 @@ def add_new_email(email) :
             cursor.execute("INSERT INTO Emails VALUES (?)" , (email ,)) 
             con.commit()
         except sqlite3.Error as err : 
-            print(err)
+            exception = HTTPException(
+                status_code=500,
+                detail= "Email already exist"
+            )
+            raise exception
         finally : 
             cursor.close()
 
@@ -48,6 +53,7 @@ def delete_email(email) :
             cursor = con.cursor()   
             cursor.execute("DELETE FROM Emails WHERE email=?" , (email ,)) 
             con.commit()
+            return {"status" : "success"}
         except sqlite3.Error as err : 
             print(err)
         finally : 
@@ -74,5 +80,3 @@ def notify_admins_by_emails(subject , body ) :
 
     except Exception as ex: 
         print(ex)
-
-create_emails_table()

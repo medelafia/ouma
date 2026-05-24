@@ -27,6 +27,7 @@ from services.influx_service import save_actual_records
 import datetime
 from db.mysql_db_connection import create_db_and_tables 
 import copy
+from services.email_services import create_emails_table
 
 
 
@@ -34,6 +35,7 @@ import copy
 async def lifespan(app : FastAPI) :
     await create_db_and_tables()
     create_admin_user()
+    create_emails_table()
     print("Startup")
     yield
     print("shuting down")

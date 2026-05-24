@@ -6,7 +6,7 @@ from schemas import schemas
 from math import ceil 
 from models import models 
 from uuid import uuid4
-
+from fastapi import HTTPException
 
 def get_all_incidents(page , size , from_date, to  ) : 
     with Session(get_engine() ) as session : 
@@ -24,3 +24,18 @@ def save_incident(incident : Incident ) :
         session.add(incident_to_insert)
         session.commit()
         return incident_to_insert
+
+
+def delete_incident_by_id(id : str) :
+    with Session(get_engine() ) as session : 
+        try :
+            incident_to_delete = session.exec(select(Incident).where(Incident.incident_id == id)).one()
+            session.delete(incident_to_delete)
+            session.commit()
+            return {"status" : "success"}
+        except Exception  : 
+            exception = HTTPException(
+                status_code=401,
+                detail= "Incident not found"
+            )
+            raise exception

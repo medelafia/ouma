@@ -25,3 +25,7 @@ def delete_email_route(email : str , token : str = Depends(get_current_user)) :
 @metadata_router.get("/emails") 
 def get_emails(token : str = Depends(get_current_user)) :
     return load_emails()
+
+@metadata_router.delete("/emails/{email}") 
+def delete_email_route(email : str) :
+    return delete_email(email)
