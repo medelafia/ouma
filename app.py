@@ -72,11 +72,12 @@ def prediction_job() :
     else : 
         print("INFO: Xgboost Prediction engine not ready to predict next values, cause the prediction engine requires past 5 values")
 
+    """
     if is_cnn_lstm_prediction_engine_ready(structured_data) : 
         predict_next_and_save_by_cnn_lstm(cnn_lstm_data)
     else : 
         print("INFO: Cnn+BILstm Prediction engine not ready to predict next values, cause the prediction engine requires past 40 values")
-
+    """
 try :
     sched.start()
 except : 

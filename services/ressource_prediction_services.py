@@ -126,7 +126,7 @@ def prepare_data_input_xgboost(dataframes) :
         ### deleteing the first 5 data records , because they will contain noisy rows 
 
         dataframes[key] = dataframes[key].replace([np.inf, -np.inf], np.nan)
-        dataframes[key] = dataframes[key].fillna(method='bfill')
+        dataframes[key] = dataframes[key].bfill()
         dataframes[key] = dataframes[key].dropna()
         
         dataframes[key] = dataframes[key].tail(10) 
@@ -172,7 +172,7 @@ def prepare_data_input_cnn_lstm(dataframes) :
         dataframes[key]['memory_rolling_std'] = dataframes[key]['memory'].rolling(5).std()
 
         dataframes[key] = dataframes[key].dropna()
-        X = input_scaler.transform(dataframes[key].drop(['memory','cpu'] , axis=1).values)
+        X = input_scaler.transform(dataframes[key].values)
         X_seq  = create_sequences(X)
         prepared_data[key] = X_seq
 
@@ -200,16 +200,20 @@ def predict_next_and_save_by_cnn_lstm(structured_data) :
 def predict_next_and_save_by_xgboost(structured_data) : 
     dfs = prepare_data_input_xgboost(structured_data)
     for key in dfs :
-        predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
-        predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
-        
-        print("INFO:next predicted datetime :" ,predicted_datetime)
+        try : 
+            predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
+            predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
+            
+            print("INFO:next predicted datetime :" ,predicted_datetime)
 
-        threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
-        threshold_memory = get_threshold(dfs[key] , key , 'memory')
-        metricsPrediction = MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory)
-        
-        handle_prediction(metricsPrediction , threshold_cpu , threshold_memory)
+            threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
+            threshold_memory = get_threshold(dfs[key] , key , 'memory')
+            metricsPrediction = MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory)
+            
+            handle_prediction(metricsPrediction , threshold_cpu , threshold_memory)
+        except Exception as ex:
+            print("ERROR", ex) 
+
 
 
 def handle_prediction(metricsPrediction : MetricsPrediction , threshold_cpu ,threshold_memory ): 
@@ -252,5 +256,4 @@ def is_xgboost_prediction_engine_ready(metrics: dict[str, pd.DataFrame]) -> bool
     return bool(metrics) and all(df.shape[0] >= 5 for df in metrics.values())
 
 def is_cnn_lstm_prediction_engine_ready(metrics: dict[str, pd.DataFrame]) -> bool :  
-
-    return bool(metrics) and all(df.size >= 46 for df in metrics.values())
+    return bool(metrics) and all(df.shape[0] >= 46 for df in metrics.values())
