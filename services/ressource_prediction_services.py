@@ -100,7 +100,6 @@ def prepare_data_input_xgboost(dataframes) :
         args : None 
         return : a list of dataframes ready to be an input of model to predict next values
     """
-
     for key in dataframes: 
         dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
         dataframes[key].set_index('timestamp', inplace=True)
@@ -137,57 +136,6 @@ def prepare_data_input_xgboost(dataframes) :
             'memory_std', 'CPU capacity provisioned MHZ', 'CPU usage ',
             'Memory capacity provisioned KB', 'Memory usage ', 'Disk size GB'
         ]
-        dataframes[key] = dataframes[key][feature_columns]
-        
-    return dataframes 
-
-
-def prepare_data_input_xgboost(dataframes) : 
-    """
-        func_name : prepare_data_input
-        description : Load data from prometheus , create record for making ML model prediction ,
-        scale data using the scaler used in the training process , create new features such as lag1 , cpu_std ...  
-        args : None 
-        return : a list of dataframes ready to be an input of model to predict next values
-    """
-
-    for key in dataframes: 
-        dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
-        dataframes[key].set_index('timestamp', inplace=True)
-        dataframes[key].sort_index(inplace=True)
-        
-        for col in dataframes[key].columns : 
-            dataframes[key][col] = pd.to_numeric(dataframes[key][col] , errors='coerce')
- 
-        dataframes[key]['CPU capacity provisioned MHZ']= 2400 * dataframes[key]['CPU cores']
-
-        dataframes[key]['hour'] = dataframes[key].index.hour.astype(int)
-        dataframes[key]['day'] = dataframes[key].index.day.astype(int)
-        dataframes[key]['weekday'] = dataframes[key].index.weekday.astype(int)
-
-        dataframes[key]['cpu_lag1'] = dataframes[key]['CPU usage '].shift(1)
-        dataframes[key]['cpu_lag5'] = dataframes[key]['CPU usage '].shift(3)
-        dataframes[key]['memory_lag1'] = dataframes[key]['Memory usage '].shift(1)
-        dataframes[key]['memory_lag5'] = dataframes[key]['Memory usage '].shift(3)
-
-        dataframes[key]['cpu_mean'] = dataframes[key]['CPU usage '].rolling(3).mean()
-        dataframes[key]['cpu_std'] = dataframes[key]['CPU usage '].rolling(3).std()
-        dataframes[key]['memory_mean'] = dataframes[key]['Memory usage '].rolling(3).mean()
-        dataframes[key]['memory_std'] = dataframes[key]['Memory usage '].rolling(3).std()
-        ### deleteing the first 5 data records , because they will contain noisy rows 
-
-        dataframes[key] = dataframes[key].replace([np.inf, -np.inf], np.nan)
-        dataframes[key] = dataframes[key].fillna(method='bfill')
-        dataframes[key] = dataframes[key].dropna()
-        
-        dataframes[key] = dataframes[key].tail(10) 
-        feature_columns = [
-            'CPU cores', 'hour', 'day', 'weekday', 'cpu_lag1', 'cpu_lag5',
-            'memory_lag1', 'memory_lag5', 'cpu_mean', 'cpu_std', 'memory_mean',
-            'memory_std', 'CPU capacity provisioned MHZ', 'CPU usage ',
-            'Memory capacity provisioned KB', 'Memory usage ', 'Disk size GB'
-        ]
-        dataframes[key][feature_columns].tail(1).to_csv(f'others/{key}.csv', mode='a', index=True, header=False)
         dataframes[key] = dataframes[key][feature_columns]
         
     return dataframes 
@@ -195,6 +143,10 @@ def prepare_data_input_xgboost(dataframes) :
 def prepare_data_input_cnn_lstm(dataframes) : 
     prepared_data = {}
     for key in dataframes: 
+        dataframes[key]['timestamp'] = pd.to_datetime(dataframes[key]['timestamp'] , unit='s')
+        dataframes[key].set_index('timestamp', inplace=True)
+        dataframes[key].sort_index(inplace=True)
+
         dataframes[key] = dataframes[key][[
             'CPU usage ',
             'Memory usage ',
@@ -202,12 +154,14 @@ def prepare_data_input_cnn_lstm(dataframes) :
             'Network received throughput KB/s'
         ]]
 
+        print(dataframes[key])
         dataframes[key].columns = ['cpu', 'memory', 'disk', 'network']
-        dataframes[key] = np.log1p(dataframes[key])
 
         for col in dataframes[key].columns : 
             dataframes[key][col] = pd.to_numeric(dataframes[key][col] , errors='coerce')
         
+        dataframes[key] = np.log1p(dataframes[key])
+
         for i in range(1, 6):
             dataframes[key][f'cpu_lag{i}'] = dataframes[key]['cpu'].shift(i)
             dataframes[key][f'memory_lag{i}'] = dataframes[key]['memory'].shift(i)
@@ -227,11 +181,12 @@ def prepare_data_input_cnn_lstm(dataframes) :
 
 def predict_next_and_save_by_cnn_lstm(structured_data) : 
     dfs , values = prepare_data_input_cnn_lstm(structured_data)
+    print(values)
     for key in dfs :
 
         predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
-        predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
-        predictions = cnn_lstm_model.predict(values)
+        #predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
+        predictions = cnn_lstm_model.predict(values[key])
         
         #print("INFO:next predicted datetime :" ,predicted_datetime)
         print("Beta Model prediction :", output_scaler.inverse_transform(predictions))
@@ -297,4 +252,5 @@ def is_xgboost_prediction_engine_ready(metrics: dict[str, pd.DataFrame]) -> bool
     return bool(metrics) and all(df.shape[0] >= 5 for df in metrics.values())
 
 def is_cnn_lstm_prediction_engine_ready(metrics: dict[str, pd.DataFrame]) -> bool :  
-    return bool(metrics) and all(df.shape[0] >= 46 for df in metrics.values())
+
+    return bool(metrics) and all(df.size >= 46 for df in metrics.values())

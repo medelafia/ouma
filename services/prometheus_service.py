@@ -26,7 +26,7 @@ def execute_query(path , query=None , is_range = False ) :
     """
     try : 
         end = int(time.time())
-        start = end - 5 * 6 * 60 
+        start = end - 1 * 45 * 60 
 
         if query is not None and is_range : 
             response = requests.get(path,params= { "query" : query, "step":loading_interval * 60, "start" : start ,"end" : end }) 

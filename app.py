@@ -26,6 +26,7 @@ from utils.instance_factory import get_instance_by_host_and_port
 from services.influx_service import save_actual_records 
 import datetime
 from db.mysql_db_connection import create_db_and_tables 
+import copy
 
 
 
@@ -57,18 +58,22 @@ def prediction_job() :
                     data[instance_id].update({metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp})
                 else: 
                     data[instance_id] = {metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp}
+                
     for instance_id in data : 
         print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
   
 
     structured_data = structurize(metrics)
+    xgb_data = copy.deepcopy(structured_data)
+    cnn_lstm_data = copy.deepcopy(structured_data)
+    
     if is_xgboost_prediction_engine_ready(structured_data) :
-        predict_next_and_save_by_xgboost(structured_data)
+        predict_next_and_save_by_xgboost(xgb_data)
     else : 
         print("INFO: Xgboost Prediction engine not ready to predict next values, cause the prediction engine requires past 5 values")
 
     if is_cnn_lstm_prediction_engine_ready(structured_data) : 
-        predict_next_and_save_by_cnn_lstm("")
+        predict_next_and_save_by_cnn_lstm(cnn_lstm_data)
     else : 
         print("INFO: Cnn+BILstm Prediction engine not ready to predict next values, cause the prediction engine requires past 40 values")
 
@@ -105,7 +110,7 @@ def get_users_me(user : dict = Depends(get_current_user)) :
 def get_kpis(token : dict = Depends(get_current_user)) :
     return 
 @app.get("/api/v1/overview") 
-def get_overview_route(from_date : str) : 
+def get_overview_route(from_date : str ,user : dict = Depends(get_current_user) ) : 
     return  { 
                 "statistics" : get_overview(datetime.datetime.fromisoformat(from_date[:-1]).replace(tzinfo=datetime.timezone.utc).date()) ,
                 "kpis" : {
