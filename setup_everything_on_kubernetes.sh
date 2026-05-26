@@ -1,9 +1,17 @@
 ###############################################################################
 ####    Copy Right 2026 (C) Mohamed EL AFIA                             
-####    script.sh : setup_everything_on_kubernetes.sh                           
+####    script : setup_all.sh 
+####    description : This script is responsible for setup the entire application and their dependancies (databases, prometheus, ...)                           
 ###############################################################################
 
 
+echo ""
+echo "=============================================="
+echo "=+  Kubernetes Full Stack Deployment Script +="
+echo "=+  Setup: App + Databases + Monitoring     +="
+echo "=+  Author: Mohamed EL AFIA (2026)          +="
+echo "=============================================="
+echo ""
 
 ### checking if the required commands exists (kubectl, docker and helm)
 if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v kubectl &> /dev/null; then
@@ -12,7 +20,7 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
         echo "🦈✅ Mysql service already exists"
     else
         echo "🦈 Creating mysql service ..."
-        kubectl create secret generic mysql-secret --from-env-file=.env --namespace monitoring
+        kubectl create secret generic mysql-secret --from-env-file=.env.mysql --namespace monitoring
         kubectl apply -f k8s/mysql/PresistenceVolume.yaml
         kubectl apply -f k8s/mysql/Deployment.yaml
         kubectl apply -f k8s/mysql/Service.yaml 
@@ -36,15 +44,23 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
     echo "MYSQL_HOST=$(kubectl get svc mysql-service --namespace monitoring | grep mysql-service | awk '{print $3}')" >> .env
     echo "INFLUX_DB_URL=$(kubectl get svc influxdb-influxdb2 --namespace monitoring | grep influxdb-influxdb2 | awk '{print $3}')" >> .env
     echo "📝✅ IPs Appended successfully"
+    ## build backend and frontend images 
+    docker build -t ouma:latest .
+    docker build -t ouma-ui:latest ./ouma-ui
+
+    #docker tag 
+
     ## Setup ouma backend
-    #echo "Setting up application backend ..."
-    #kubectl apply -f k8s/ouma/deployment.yaml
-    #kubectl apply -f k8s/ouma/service.yaml
+    echo "Setting up application backend ..."
+    kubectl create secret generic ouma-secret --from-env-file=.env --namespace monitoring
+    kubectl apply -f k8s/ouma/deployment.yaml
+    kubectl apply -f k8s/ouma/service.yaml
     ## Setup ouma frontend 
-    #echo "Setting up application frontend ..."
-    #kubectl apply -f k8s/ouma-ui/deployment.yaml
-    #kubectl apply -f k8s/ouma-ui/service.yaml
-    #echo "✅ Done"
+    echo "Setting up application frontend ..."
+    kubectl create secret generic ouma-ui-secret --from-env-file=./ouma-ui/.env --namespace monitoring
+    kubectl apply -f k8s/ouma-ui/deployment.yaml
+    kubectl apply -f k8s/ouma-ui/service.yaml
+    echo "✅ Done"
 else 
     echo "❌ Before starting the setup, ensure that Docker, Kubernetes, and Helm are installed on your system.";
 fi 

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ouma
+  name: ouma-deployment
   namespace: monitoring
 spec:
   replicas: 1
@@ -16,67 +16,120 @@ spec:
     spec:
       containers:
         - name: ouma
-          image: 
+          image: ouma:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           env:
-            - name: MYSQL_ROOT_PASSWORD
+            - name: INFLUX_DB_BUCKET
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_DATABASE
+                  name: ouma-secret
+                  key: INFLUX_DB_BUCKET
+            - name: INFLUX_DB_ORG
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_DATABASE
+                  name: ouma-secret
+                  key: INFLUX_DB_ORG
+            - name: INFLUX_DB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: INFLUX_DB_TOKEN
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: ouma-secret
                   key: MYSQL_USER
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
+                  name: ouma-secret
                   key: MYSQL_PASSWORD
-            - name: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DB
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_DATABASE
+                  name: ouma-secret
+                  key: MYSQL_DB
+            - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_DATABASE
-            - name: MYSQL_USER
+                  name: ouma-secret
+                  key: SECRET_KEY
+            - name: TARGET_SERVER_PORT
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_USER
-            - name: MYSQL_PASSWORD
+                  name: ouma-secret
+                  key: TARGET_SERVER_PORT
+            - name: PREDICTION_INTERVAL
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_PASSWORD
-            - name: MYSQL_ROOT_PASSWORD
+                  name: ouma-secret
+                  key: PREDICTION_INTERVAL
+            - name: ACTIVATE_EMAIL_ALERTING
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_DATABASE
+                  name: ouma-secret
+                  key: ACTIVATE_EMAIL_ALERTING
+            - name: ACTIVATE_SLACK_ALERTING
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_DATABASE
-            - name: MYSQL_USER
+                  name: ouma-secret
+                  key: ACTIVATE_SLACK_ALERTING
+            - name: SYSTEM_EMAIL
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_USER
-            - name: MYSQL_PASSWORD
+                  name: ouma-secret
+                  key: SYSTEM_EMAIL
+            - name: SMTP_SERVER
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_PASSWORD
+                  name: ouma-secret
+                  key: SMTP_SERVER
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: SMTP_PORT
+            - name: SYSTEM_EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: SYSTEM_EMAIL_PASSWORD
+            - name: SYSTEM_EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: SYSTEM_EMAIL_PASSWORD
+            - name: SLACK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: SLACK_TOKEN
+            - name: SLACK_CHANNEL
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: SLACK_CHANNEL
+            - name: SLACK_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: SLACK_USER
+            - name: TARGET_SERVER_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: TARGET_SERVER_HOST
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: MYSQL_HOST
+            - name: INFLUX_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ouma-secret
+                  key: INFLUX_DB_URL
+            
+            
