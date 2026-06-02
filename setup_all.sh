@@ -34,28 +34,43 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
         kubectl create secret generic influxdb-auth --from-env-file=.env.influxdb2 --namespace monitoring
         helm repo add influxdata https://helm.influxdata.com/
         helm repo update
-        helm install influxdb influxdata/influxdb2 --set adminUser.existingSecret=influxdb-auth --namespace monitoring
+        helm install influxdb influxdata/influxdb2 --set adminUser.existingSecret=influxdb-auth --set service.port=8086 --namespace monitoring
         echo "📈✅ Influx service created successfully"
     fi 
+
+    read -p "do you want to build the images(y/n): " need_build
     ## build backend and frontend images 
-    echo "⚒️⛏️ Building images"
-    docker build -t ouma:latest .
-    docker build -t ouma-ui:latest ./ouma-ui
-    echo "⚒️⛏️✅ Build comleted"
+    if [[ "$need_build" == "y" || "$need_build" == "Y" ]]; then
+        echo "⚒️⛏️ Building images"
+        eval $(minikube docker-env)
+        docker build -t ouma:latest .
+        docker build -t ouma-ui:latest ./ouma-ui
+        echo "⚒️⛏️✅ Build completed"
+    else
+        echo "⚒️⛏️❌ Ignoring building"
+    fi
     ## Setup ouma backend
     echo "🆙 Startup Ouma backend ..."
-    kubectl create secret generic ouma-secret --from-env-file=.env --namespace monitoring
-    kubectl apply -f k8s/ouma/deployment.yaml
-    kubectl apply -f k8s/ouma/service.yaml
+    if kubectl get secret ouma-secret -n monitoring >/dev/null 2>&1; then 
+        echo "Ouma secret already exists"
+    else 
+        kubectl create secret generic ouma-secret --from-env-file=.env --namespace monitoring
+    fi
+    kubectl apply -f k8s/ouma/Deployment.yaml
+    kubectl apply -f k8s/ouma/Service.yaml
+    kubectl apply -f k8s/ouma/Ingress.yaml
     echo "✅ Ouma backend ready ..."
     ## Setup ouma frontend 
     echo "🆙 Startup Ouma frontend ..."
-    kubectl create secret generic ouma-ui-secret --from-env-file=./ouma-ui/.env --namespace monitoring
-    kubectl apply -f k8s/ouma-ui/deployment.yaml
-    kubectl apply -f k8s/ouma-ui/service.yaml
+    if kubectl get secret ouma-ui-secret -n monitoring >/dev/null 2>&1; then 
+        echo "Ouma-ui secret already exists"
+    else
+        kubectl create secret generic ouma-ui-secret --from-env-file=./ouma-ui/.env --namespace monitoring
+    fi
+    kubectl apply -f k8s/ouma-ui/Deployment.yaml
+    kubectl apply -f k8s/ouma-ui/Service.yaml
     echo "✅ Ouma frontend ready ..."
     echo "✅✅✅ Done"
 else 
     echo "❌ Before starting the setup, ensure that Docker, Kubernetes, and Helm are installed on your system.";
 fi 
-

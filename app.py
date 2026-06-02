@@ -126,7 +126,7 @@ def get_overview_route(from_date : str ,user : dict = Depends(get_current_user) 
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=["http://ui.local"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=['*']

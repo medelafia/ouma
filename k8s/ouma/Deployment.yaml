@@ -96,11 +96,6 @@ spec:
                 secretKeyRef:
                   name: ouma-secret
                   key: SYSTEM_EMAIL_PASSWORD
-            - name: SYSTEM_EMAIL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ouma-secret
-                  key: SYSTEM_EMAIL_PASSWORD
             - name: SLACK_TOKEN
               valueFrom:
                 secretKeyRef:
