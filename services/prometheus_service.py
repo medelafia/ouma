@@ -4,18 +4,19 @@ from services.metadata_services import get_metadata , load_metadata
 from schemas.schemas import Instance
 
 ## DEFINNING SOME GLOBAL VARIABLES 
+loading_interval = load_metadata().PREDICTION_INTERVAL
 PROMETHEUS_URL = f"http://{get_metadata().TARGET_SERVER_HOST}:{get_metadata().TARGET_SERVER_PORT}/api/v1"
 queries = [
     { "name":"CPU cores" , "query" : 'count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})' } , 
-    {"name" :"CPU usage " , "query" : '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'},
-    { "name": "Memory capacity provisioned KB" , "query" : "node_memory_MemTotal_bytes"} , 
+    {"name" :"CPU usage " , "query" : f'100 - (avg by (instance) (rate(node_cpu_seconds_total{{mode="idle"}}[{loading_interval}m])) * 100)'},
+    { "name": "Memory capacity provisioned KB" , "query" : "node_memory_MemTotal_bytes / 1024"} , 
     { "name"  : "Memory usage " , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
-    { "name": "Disk read throughput KB/s" , "query": "avg by (instance) (rate(node_disk_read_bytes_total[5m]))"} , 
-    { "name": "Disk write throughput KB/s" , "query": "avg by (instance) (rate(node_disk_written_bytes_total[5m]))"} , 
-    { "name" : "Disk size GB" , "query" : 'sum by (instance, device) (node_filesystem_size_bytes{mountpoint="/data"} / 1024 / 1024 / 1024)'} , 
-    { "name" : "Network received throughput KB/s" , "query" : 'rate(node_network_receive_bytes_total[5m]) / 1024'}
+    { "name": "Disk read throughput KB/s" , "query": f"avg by (instance) (rate(node_disk_read_bytes_total[{loading_interval}m]))"} , 
+    { "name": "Disk write throughput KB/s" , "query": f"avg by (instance) (rate(node_disk_written_bytes_total[{loading_interval}m]))"} , 
+    { "name" : "Disk size GB" , "query" : 'sum by (instance) (node_filesystem_size_bytes{device=~"/dev/mapper/ocivolume-oled|/dev/mapper/ocivolume-root"} / 1024 / 1024 / 1024)'} , 
+    { "name" : "Network received throughput KB/s" , "query" : f'sum by (instance) (rate(node_network_receive_bytes_total[{loading_interval}m])) / 1024'}
 ]
-loading_interval = load_metadata().PREDICTION_INTERVAL
+
 
 def execute_query(path , query=None , is_range = False ) : 
     """

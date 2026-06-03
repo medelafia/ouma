@@ -67,7 +67,6 @@ def create_sequences(X, seq_len=40):
 
 def structurize(metrics) :
     data = { }
-    
     ## loop through the metrics and append each metric to predefined dictionnary 
     for metric in metrics : 
         if metric['value']['status'] == 'success' : 
@@ -87,8 +86,9 @@ def structurize(metrics) :
 
                         for j in range(len(data[instance_id])) :
                             if timestamp == data[instance_id][j]['timestamp'] :  
-                                data[instance_id][j][metric_name] = metric_value
-    
+                                data[instance_id][j][metric_name] = float(metric_value.replace(",",".")) 
+
+
     return { key : pd.DataFrame(data[key]) for key in data } 
 
 
@@ -137,6 +137,7 @@ def prepare_data_input_xgboost(dataframes) :
             'Memory capacity provisioned KB', 'Memory usage ', 'Disk size GB'
         ]
         dataframes[key] = dataframes[key][feature_columns]
+        print(dataframes[key])
         
     return dataframes 
 
@@ -201,6 +202,7 @@ def predict_next_and_save_by_xgboost(structured_data) :
     dfs = prepare_data_input_xgboost(structured_data)
     for key in dfs :
         try : 
+            print(dfs[key])
             predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
             predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
             
@@ -219,7 +221,7 @@ def predict_next_and_save_by_xgboost(structured_data) :
 def handle_prediction(metricsPrediction : MetricsPrediction , threshold_cpu ,threshold_memory ): 
     print("INFO:insert value ",save_prediction(metricsPrediction) )
 
-    if metricsPrediction.cpu_usage > threshold_cpu : 
+    if metricsPrediction.cpu_usage > max(50 , threshold_cpu) : 
         if anomalies['cpu']['count'] == 0 : 
             anomaly = create_and_save_anomaly(metricsPrediction.instance_id)
             anomalies['cpu']['anomaly'] = anomaly
@@ -236,7 +238,7 @@ def handle_prediction(metricsPrediction : MetricsPrediction , threshold_cpu ,thr
         anomalies['cpu']['count'] = 0 
         anomalies['cpu']['anomaly'] = None
     
-    if metricsPrediction.memory_usage > threshold_memory : 
+    if metricsPrediction.memory_usage > max(threshold_memory,50) : 
 
         if anomalies['memory']['count'] == 0 : 
             anomaly = create_and_save_anomaly(metricsPrediction.instance_id)

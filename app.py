@@ -63,14 +63,11 @@ def prediction_job() :
                 
     for instance_id in data : 
         print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
-  
-
-    structured_data = structurize(metrics)
-    xgb_data = copy.deepcopy(structured_data)
-    cnn_lstm_data = copy.deepcopy(structured_data)
     
+    structured_data = structurize(metrics)
+
     if is_xgboost_prediction_engine_ready(structured_data) :
-        predict_next_and_save_by_xgboost(xgb_data)
+        predict_next_and_save_by_xgboost(structured_data)
     else : 
         print("INFO: Xgboost Prediction engine not ready to predict next values, cause the prediction engine requires past 5 values")
 
@@ -126,7 +123,7 @@ def get_overview_route(from_date : str ,user : dict = Depends(get_current_user) 
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 
-    allow_origins=["http://ui.local"], 
+    allow_origins=["http://localhost:3000"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=['*']
