@@ -13,8 +13,8 @@ queries = [
     { "name"  : "Memory usage " , "query": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"} , 
     { "name": "Disk read throughput KB/s" , "query": f"avg by (instance) (rate(node_disk_read_bytes_total[{loading_interval}m]))"} , 
     { "name": "Disk write throughput KB/s" , "query": f"avg by (instance) (rate(node_disk_written_bytes_total[{loading_interval}m]))"} , 
-    #{ "name" : "Disk size GB" , "query" : 'sum by (instance) (node_filesystem_size_bytes{device=~"/dev/mapper/ocivolume-oled|/dev/mapper/ocivolume-root"} / 1024 / 1024 / 1024)'} ,
-    { "name" : "Disk size GB" , "query" : 'avg by (instance,device) (node_filesystem_size_bytes{device="/dev/vda1"} / 1024 / 1024 / 1024)'} ,
+    { "name" : "Disk size GB" , "query" : 'sum by (instance) (node_filesystem_size_bytes{device=~"/dev/mapper/ocivolume-oled|/dev/mapper/ocivolume-root"} / 1024 / 1024 / 1024)'} ,
+    #{ "name" : "Disk size GB" , "query" : 'avg by (instance,device) (node_filesystem_size_bytes{device="/dev/vda1"} / 1024 / 1024 / 1024)'} ,
     { "name" : "Network received throughput KB/s" , "query" : f'sum by (instance) (rate(node_network_receive_bytes_total[{loading_interval}m])) / 1024'}
 ]
 

@@ -95,7 +95,7 @@ async def login_for_access_token(response : Response , form_data: OAuth2Password
         value=access_token,
         httponly=True,
         secure=False, # HTTPS only
-        samesite="lax",
+        samesite="none",
         max_age=1800
     )
     return {"status" : "success"}
@@ -123,7 +123,9 @@ def get_overview_route(from_date : str ,user : dict = Depends(get_current_user) 
 @app.get("/api/v1/systemHealth")
 def get_system_status() : 
     return check_system_health()
-
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 

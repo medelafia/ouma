@@ -77,13 +77,8 @@ def load_metadata() :
     if metadata is None :
         metadata = Metadata()
         for i in ['TARGET_SERVER_HOST' , 'PREDICTION_INTERVAL' ,'ACTIVATE_EMAIL_ALERTING', 'ACTIVATE_SLACK_ALERTING', 'TARGET_SERVER_PORT' ] : 
-            founded_value = get_metadata_from_db(i)
-
-            if founded_value is None : 
-                save_metadata(i , get_config(i))
-                setattr(metadata, i , parse_value(get_config(i)))
-            else : 
-                setattr(metadata, i , parse_value(founded_value[1]))
+            save_metadata(i , get_config(i))
+            setattr(metadata, i , parse_value(get_config(i)))
     return metadata
 
 
