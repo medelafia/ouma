@@ -28,7 +28,7 @@ import datetime
 from db.mysql_db_connection import create_db_and_tables 
 import copy
 from services.email_services import create_emails_table
-
+from services.system_services import check_system_health
 
 
 @asynccontextmanager
@@ -48,7 +48,7 @@ interval = int(get_metadata().PREDICTION_INTERVAL)
 @sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
 def prediction_job() : 
     metrics = fetch_metrics()
-    print("doing job...")
+    print("Doing job...")
     data = {}
     for metric in metrics : 
         if metric['name'] == "CPU usage " or metric['name'] == "Memory usage " : 
@@ -120,6 +120,10 @@ def get_overview_route(from_date : str ,user : dict = Depends(get_current_user) 
                     "alerts" : get_alerts_count()
                 }
             }
+@app.get("/api/v1/systemHealth")
+def get_system_status() : 
+    return check_system_health()
+
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 
