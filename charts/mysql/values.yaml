@@ -1,0 +1,9 @@
+containerPorts: 
+  mysql: 3306
+
+service:
+  name: mysql
+  type: ClusterIP
+  ports: 
+    mysql: 3306
+  targetPort: mysql
