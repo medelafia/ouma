@@ -65,8 +65,10 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
         docker build -t ouma:latest .
         docker tag ouma:latest mohamedelafia/ouma:latest
         docker push mohamedelafia/ouma:latest
-        #docker build -t ouma-ui:latest ./ouma-ui
-        #docker tag ouma-ui:latest mohamedelafia/ouma-ui:latest
+
+        docker build -t ouma-ui:latest ./ouma-ui
+        docker tag ouma-ui:latest mohamedelafia/ouma-ui:latest
+        docker push mohamedelafia/ouma-ui:latest
         echo "⚒️⛏️✅ Build completed"
     else
         echo "⚒️⛏️❌ Ignoring building"
@@ -82,15 +84,31 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
     helm upgrade --install ouma charts/ouma-chart -n monitoring
     echo "✅ Ouma backend ready ..."
     #Setup ouma frontend 
-    #echo "🆙 Startup Ouma frontend ..."
-    #if kubectl get secret ouma-ui-config-map -n monitoring >/dev/null 2>&1; then 
-    #    echo "Ouma-ui config map already exists"
-    #else
+    echo "🆙 Startup Ouma frontend ..."
 
-    #    kubectl create configmap ouma-ui-config-ma  --namespace monitoring
-    #fi
-    #helm upgrade --install ouma-ui charts/ouma-ui-chart
-    #echo "✅ Ouma frontend ready ..."
+    if kubectl get configmap ouma-ui-config-map -n monitoring >/dev/null 2>&1; then 
+        echo "Ouma-ui config map already exists"
+    else
+        echo "waiting for ouma's external IP" 
+        while true; do
+            IP_ADD=$(kubectl get svc -n monitoring \
+                | grep ouma-ouma-chart \
+                | awk '{print $4}')
+
+            if [[ "$IP_ADD" != "<pending>" && -n "$IP_ADD" ]]; then
+                break
+            fi
+            echo "."
+            sleep 5
+        done
+
+        echo "External IP found: $IP_ADD"
+        IP_ADD = kubectl get svc -n monitoring | grep ouma-ouma-chart | awk '{print $4}'
+        kubectl create configmap ouma-ui-config-map --from-literal=NEXT_PUBLIC_API_URL="http://$IP_ADD:8000" --namespace monitoring
+    fi
+
+    helm upgrade --install ouma-ui charts/ouma-ui-chart
+    echo "✅ Ouma frontend ready ..."
     echo "✅✅✅ Done"
 else 
     echo "❌ Before starting the setup, ensure that Docker, Kubernetes, and Helm are installed on your system.";

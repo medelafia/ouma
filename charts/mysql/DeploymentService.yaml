@@ -16,7 +16,7 @@ spec:
         app: mysql
     spec:
       containers:
-      - image: mysql:latest
+      - image: docker.io/mysql:latest
         name: mysql
         envFrom:
           - configMapRef:

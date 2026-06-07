@@ -44,6 +44,11 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          envFrom:
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom: 
+                configMapRef: ouma-ui-config-map
+                key: NEXT_PUBLIC_API_URL
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
