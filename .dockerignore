@@ -7,6 +7,7 @@ docker-compose.yaml
 k8s/
 *.sh
 licence
-ouma-ui/
+oumaGuard-ui/
 /__pycache__/
 notebook/
+tmp/

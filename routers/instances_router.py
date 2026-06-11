@@ -59,7 +59,6 @@ def get_reals_metrics(instance_id ,token : str = Depends(get_current_user)):
 @instances_routers.get("/{instance_id}/metrics/all" )
 def get_reals_metrics(instance_id , from_date : str ,token : str = Depends(get_current_user)): 
     start_datetime = datetime.datetime.fromisoformat(from_date[:-1]).replace(tzinfo=datetime.timezone.utc)
-    print(start_datetime)
     return load_all_metrics(instance_id, start_datetime )
 
 

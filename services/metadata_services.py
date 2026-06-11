@@ -2,6 +2,10 @@ from db.sqlite_db_connection import get_connection
 import sqlite3 
 from utils.env_factory import get_config
 from schemas.schemas import Metadata
+import logging 
+
+
+logger = logging.getLogger(__name__ ) 
 
 
 def create_metadata_table() : 
@@ -31,7 +35,7 @@ create_metadata_table()
 
 def get_metadata() : 
     if metadata is None : 
-        print("INFO:metadata not found, loading from db") 
+        logger.info("metadata not found, loading from sqlite database") 
         load_metadata()
 
     return metadata

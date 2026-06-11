@@ -5,6 +5,8 @@ from utils.env_factory import get_config
 from db.influx_db_connection import get_influx_connection 
 from schemas.schemas import MetricsPrediction
 from datetime import datetime, timezone
+import logging
+
 
 bucket , org = get_config("INFLUX_DB_BUCKET")  , get_config("INFLUX_DB_ORG") 
 client = get_influx_connection() 
@@ -12,6 +14,7 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 query_api = client.query_api()
 bucket_api = client.buckets_api()
 delete_api = client.delete_api()
+logger = logging.getLogger(__name__)
 
 def check_bucket_and_create(bucket_name ) : 
     bucket = bucket_api.find_bucket_by_name(bucket_name)
@@ -22,7 +25,7 @@ def check_bucket_and_create(bucket_name ) :
         retention_rules = influxdb_client.BucketRetentionRules(type="expire", every_seconds=0)
         
         created_bucket = bucket_api.create_bucket(bucket_name=bucket_name , retention_rules=retention_rules , org=org)
-        print(f"INFO:Bucket created {created_bucket}")
+        logger.info(f"Bucket created {str(created_bucket)}")
         return created_bucket 
     
 def save_prediction( prediction : MetricsPrediction ) : 

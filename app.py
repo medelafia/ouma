@@ -26,9 +26,9 @@ from utils.instance_factory import get_instance_by_host_and_port
 from services.influx_service import save_actual_records 
 import datetime
 from db.mysql_db_connection import create_db_and_tables 
-import copy
 from services.email_services import create_emails_table
 from services.system_services import check_system_health
+import logging
 
 
 @asynccontextmanager
@@ -44,11 +44,12 @@ async def lifespan(app : FastAPI) :
 sched =  BackgroundScheduler()
 app = FastAPI(lifespan=lifespan)
 interval = int(get_metadata().PREDICTION_INTERVAL)
+logger = logging.getLogger(__name__)
 
 @sched.scheduled_job('interval' , id='my_job_id',  minutes=1)
 def prediction_job() : 
     metrics = fetch_metrics()
-    print("Doing job...")
+    logger.info("Doing job...")
     data = {}
     for metric in metrics : 
         if metric['name'] == "CPU usage " or metric['name'] == "Memory usage " : 
@@ -62,16 +63,16 @@ def prediction_job() :
                     data[instance_id] = {metric['name'].lower().split()[0] : float(res['values'][-1][1]) , "timestamp" :  timestamp}
                 
     for instance_id in data : 
-        print("INFO:insert value " , save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))
+        logger.info(f"inserting value {str(save_actual_records(instance_id , data[instance_id]['cpu'] , data[instance_id]['memory'] , data[instance_id]['timestamp'] ))}")
     
     structured_data = structurize(metrics)
 
     if is_xgboost_prediction_engine_ready(structured_data) :
         predict_next_and_save_by_xgboost(structured_data)
     else : 
-        print("INFO: Xgboost Prediction engine not ready to predict next values, cause the prediction engine requires past 5 values")
+        logger.info("Xgboost Prediction engine not ready to predict next values, cause the prediction engine requires past 5 values")
 
-    """
+    """ Multi modal feature disabled
     if is_cnn_lstm_prediction_engine_ready(structured_data) : 
         predict_next_and_save_by_cnn_lstm(cnn_lstm_data)
     else : 
@@ -95,7 +96,7 @@ async def login_for_access_token(response : Response , form_data: OAuth2Password
         value=access_token,
         httponly=True,
         secure=False, # HTTPS only
-        samesite="none",
+        samesite="lax",
         max_age=1800
     )
     return {"status" : "success"}
@@ -129,7 +130,7 @@ def health():
 
 app.add_middleware(
     middleware_class=CORSMiddleware , 
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=['*']

@@ -2,12 +2,17 @@ from uuid import uuid4
 from schemas.schemas import Instance
 from services.prometheus_service import fetch_instances
 from services.instances_services import load_instance_by_host_and_port , save_instance
+import logging
+
+logger = logging.getLogger(__name__)
 instances = None
+
+
 
 def get_instances() : 
     global instances
     if instances is None : 
-        print("INFO:instances data is none , loading from prometheus")
+        logger.info("instances data is none , loading from prometheus")
         data = []
         print(fetch_instances())
         for instance in fetch_instances() : 
@@ -26,10 +31,9 @@ def get_instances() :
                     save_instance(new_instance)
             except Exception as ex : 
                 print(ex)
-        print(data)
         instances = data[::] 
     else :
-        print("INFO:instances data exists in memory")
+        logger.info("Instances data exists in cache")
     return instances 
 
 def get_instance_by_id(id) :

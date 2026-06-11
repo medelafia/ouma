@@ -13,6 +13,7 @@ echo "=+  Author: Mohamed EL AFIA (2026)          +="
 echo "=============================================="
 echo ""
 
+
 ### checking if the required commands exists (kubectl, docker and helm)
 if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v kubectl &> /dev/null; then
     ## setup mysql database 
@@ -53,7 +54,7 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
         helm install influxdb influxdata/influxdb2 \
         --set adminUser.existingSecret=influxdb-auth \
         --set service.port=8086 \
-        --set influxdb.initOrg="ouma-org"\
+        --set influxdb.initOrg="oumaGuard-org"\
         --namespace monitoring
         echo "📈✅ Influx service created successfully"
     fi 
@@ -62,37 +63,37 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
     ## build backend and frontend images 
     if [[ "$need_build" == "y" || "$need_build" == "Y" ]]; then
         echo "⚒️⛏️ Building images"
-        docker build -t ouma:latest .
-        docker tag ouma:latest mohamedelafia/ouma:latest
-        docker push mohamedelafia/ouma:latest
+        docker build -t oumaGuard:latest .
+        docker tag oumaGuard:latest mohamedelafia/oumaGuard:latest
+        docker push mohamedelafia/oumaGuard:latest
 
-        docker build -t ouma-ui:latest ./ouma-ui
-        docker tag ouma-ui:latest mohamedelafia/ouma-ui:latest
-        docker push mohamedelafia/ouma-ui:latest
+        docker build -t oumaGuard-ui:latest ./oumaGuard-ui
+        docker tag oumaGuard-ui:latest mohamedelafia/oumaGuard-ui:latest
+        docker push mohamedelafia/oumaGuard-ui:latest
         echo "⚒️⛏️✅ Build completed"
     else
         echo "⚒️⛏️❌ Ignoring building"
     fi
     ## Setup ouma backend
-    echo "🆙 Startup Ouma backend ..."
-    if kubectl get configmap ouma-config-map -n monitoring >/dev/null 2>&1; then 
-        echo "Ouma config map already exists"
+    echo "🆙 Startup OumaGuard backend ..."
+    if kubectl get configmap oumaGuard-config-map -n monitoring >/dev/null 2>&1; then 
+        echo "OumaGuard config map already exists"
     else 
-        kubectl create configmap ouma-config-map  --from-env-file=.env --namespace monitoring
+        kubectl create configmap oumaGuard-config-map  --from-env-file=.env --namespace monitoring
     fi
 
-    helm upgrade --install ouma charts/ouma-chart -n monitoring
-    echo "✅ Ouma backend ready ..."
+    helm upgrade --install oumaGuard charts/oumaGuard-chart -n monitoring
+    echo "✅ OumaGuard backend ready ..."
     #Setup ouma frontend 
-    echo "🆙 Startup Ouma frontend ..."
+    echo "🆙 Startup OumaGuard frontend ..."
 
-    if kubectl get configmap ouma-ui-config-map -n monitoring >/dev/null 2>&1; then 
-        echo "Ouma-ui config map already exists"
+    if kubectl get configmap oumaGuard-ui-config-map -n monitoring >/dev/null 2>&1; then 
+        echo "OumaGuard-ui config map already exists"
     else
-        echo "waiting for ouma's external IP" 
+        echo "waiting for oumaGuard's external IP" 
         while true; do
             IP_ADD=$(kubectl get svc -n monitoring \
-                | grep ouma-ouma-chart \
+                | grep oumaGuard-oumaGuard-chart \
                 | awk '{print $4}')
 
             if [[ "$IP_ADD" != "<pending>" && -n "$IP_ADD" ]]; then
@@ -103,12 +104,12 @@ if command -v docker &> /dev/null && command -v helm &> /dev/null && command -v 
         done
 
         echo "External IP found: $IP_ADD"
-        IP_ADD = kubectl get svc -n monitoring | grep ouma-ouma-chart | awk '{print $4}'
-        kubectl create configmap ouma-ui-config-map --from-literal=NEXT_PUBLIC_API_URL="http://$IP_ADD:8000" --namespace monitoring
+        IP_ADD = kubectl get svc -n monitoring | grep oumaGuard-oumaGuard-chart | awk '{print $4}'
+        kubectl create configmap oumaGuard-ui-config-map --from-literal=NEXT_PUBLIC_API_URL="http://$IP_ADD:8000" --namespace monitoring
     fi
 
-    helm upgrade --install ouma-ui charts/ouma-ui-chart
-    echo "✅ Ouma frontend ready ..."
+    helm upgrade --install oumaGuard-ui charts/oumaGuard-ui-chart
+    echo "✅ OumaGuard frontend ready ..."
     echo "✅✅✅ Done"
 else 
     echo "❌ Before starting the setup, ensure that Docker, Kubernetes, and Helm are installed on your system.";
