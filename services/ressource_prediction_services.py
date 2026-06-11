@@ -12,8 +12,8 @@ from services.anomaly_service import create_and_save_anomaly ,  save_anomaly
 import datetime
 from services.metadata_services import load_metadata
 from utils.env_factory import get_config
-from keras.models import load_model
-
+#from keras.models import load_model
+import logging
 
 anomalies = { 
     "memory" :  {
@@ -36,7 +36,8 @@ def load_pkl(name) :
 memory_model = load_pkl("memory_model")
 cpu_model = load_pkl("cpu_model")
 prediction_interval = load_metadata().PREDICTION_INTERVAL
-
+logging.basicConfig(level=logging.INFO)
+logger =logging.getLogger(__name__)
 
 def check_timestamp_existance(list_obj , timestamp  ) : 
     for record in list_obj : 
@@ -127,7 +128,6 @@ def prepare_data_input_xgboost(dataframes) :
             'Memory capacity provisioned KB', 'Memory usage ', 'Disk size GB'
         ]
         dataframes[key] = dataframes[key][feature_columns]
-        print(dataframes[key])
         
     return dataframes 
 
@@ -139,8 +139,7 @@ def predict_next_and_save_by_xgboost(structured_data) :
             predicted_datetime = dfs[key].tail(1).index[0] + timedelta(minutes=prediction_interval)
             predicted_memory ,predicted_cpu = memory_model.predict(dfs[key].tail(1))[0] , cpu_model.predict(dfs[key].tail(1))[0]
             
-            print("INFO:next predicted datetime :" ,predicted_datetime)
-
+            #print("INFO:next predicted datetime :" ,predicted_datetime)
             threshold_cpu = get_threshold(dfs[key] , key, 'cpu')
             threshold_memory = get_threshold(dfs[key] , key , 'memory')
             metricsPrediction = MetricsPrediction(timestamp=predicted_datetime , instance_id=key , cpu_usage=predicted_cpu ,memory_usage=predicted_memory)
@@ -152,7 +151,7 @@ def predict_next_and_save_by_xgboost(structured_data) :
 
 
 def handle_prediction(metricsPrediction : MetricsPrediction , threshold_cpu ,threshold_memory ): 
-    print("INFO:insert value ",save_prediction(metricsPrediction) )
+    logger.info(f"INFO:insert value {save_prediction(metricsPrediction)}")
 
     if metricsPrediction.cpu_usage > max(50 , threshold_cpu) : 
         if anomalies['cpu']['count'] == 0 : 

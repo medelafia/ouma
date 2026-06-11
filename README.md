@@ -1,6 +1,6 @@
-# 🚀 Incident Prediction System
+# 🚀 OumaGuard 
 ## 📖 Overview
-The **Incident Prediction System** is an AI-powered cloud-native platform designed to predict infrastructure incidents before they occur. By combining **Kubernetes observability**, **machine learning**, and **automated alerting**, the system enables infrastructure teams to proactively identify resource saturation risks, reduce downtime, and improve service reliability.
+**OumaGuard** is an AI-powered cloud-native platform designed to predict infrastructure incidents before they occur. By combining **Kubernetes observability**, **machine learning**, and **automated alerting**, the system enables infrastructure teams to proactively identify resource saturation risks, reduce downtime, and improve service reliability.
 The platform collects metrics from Kubernetes nodes, analyzes historical and real-time resource usage patterns, predicts future CPU and memory consumption, and automatically notifies administrators when a high-risk situation is detected.
 ---
 ## ✨ Features

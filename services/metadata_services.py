@@ -4,7 +4,7 @@ from utils.env_factory import get_config
 from schemas.schemas import Metadata
 import logging 
 
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__ ) 
 
 

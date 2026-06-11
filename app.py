@@ -7,7 +7,7 @@ from fastapi import FastAPI , Depends ,HTTPException , Response
 from routers.instances_router import instances_routers
 from routers.incident_router import incident_router
 from apscheduler.schedulers.background import BackgroundScheduler
-from services.ressource_prediction_services import predict_next_and_save_by_xgboost , is_xgboost_prediction_engine_ready  , structurize, is_cnn_lstm_prediction_engine_ready , predict_next_and_save_by_cnn_lstm
+from services.ressource_prediction_services import predict_next_and_save_by_xgboost , is_xgboost_prediction_engine_ready  , structurize 
 from services.alerting_services import get_alerts_count , get_overview
 from services.anomaly_service import get_anomalies_count
 from services.incident_services import get_incidents_count 
@@ -36,9 +36,9 @@ async def lifespan(app : FastAPI) :
     await create_db_and_tables()
     create_admin_user()
     create_emails_table()
-    print("Startup")
+    logger.info("Startup")
     yield
-    print("shuting down")
+    logger.info("shuting down")
 
 
 sched =  BackgroundScheduler()

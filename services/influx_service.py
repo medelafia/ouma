@@ -14,6 +14,7 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 query_api = client.query_api()
 bucket_api = client.buckets_api()
 delete_api = client.delete_api()
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def check_bucket_and_create(bucket_name ) : 
